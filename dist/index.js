@@ -1,63 +1,2589 @@
 module.exports =
-/******/ (function(modules, runtime) { // webpackBootstrap
-/******/ 	"use strict";
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-/******/
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId]) {
-/******/ 			return installedModules[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			i: moduleId,
-/******/ 			l: false,
-/******/ 			exports: {}
-/******/ 		};
-/******/
-/******/ 		// Execute the module function
-/******/ 		var threw = true;
-/******/ 		try {
-/******/ 			modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-/******/ 			threw = false;
-/******/ 		} finally {
-/******/ 			if(threw) delete installedModules[moduleId];
-/******/ 		}
-/******/
-/******/ 		// Flag the module as loaded
-/******/ 		module.l = true;
-/******/
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/
-/******/
-/******/ 	__webpack_require__.ab = __dirname + "/";
-/******/
-/******/ 	// the startup function
-/******/ 	function startup() {
-/******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(109);
-/******/ 	};
-/******/
-/******/ 	// run startup
-/******/ 	return startup();
-/******/ })
-/************************************************************************/
-/******/ ({
+/******/ (() => { // webpackBootstrap
+/******/ 	var __webpack_modules__ = ({
 
-/***/ 16:
-/***/ (function(module) {
+/***/ 7236:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-module.exports = require("tls");
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Assignees = void 0;
+const lodash_deburr_1 = __importDefault(__nccwpck_require__(1601));
+const option_1 = __nccwpck_require__(5931);
+const words_to_list_1 = __nccwpck_require__(1883);
+const issue_logger_1 = __nccwpck_require__(2984);
+const logger_service_1 = __nccwpck_require__(1973);
+class Assignees {
+    constructor(options, issue) {
+        this._options = options;
+        this._issue = issue;
+        this._issueLogger = new issue_logger_1.IssueLogger(issue);
+    }
+    static _cleanAssignee(assignee) {
+        return lodash_deburr_1.default(assignee.toLowerCase());
+    }
+    shouldExemptAssignees() {
+        if (!this._issue.hasAssignees) {
+            this._issueLogger.info('This $$type has no assignee');
+            this._logSkip();
+            return false;
+        }
+        if (this._shouldExemptAllAssignees()) {
+            this._issueLogger.info(logger_service_1.LoggerService.white('└──'), 'Skipping this $$type because it has an exempt assignee');
+            return true;
+        }
+        const exemptAssignees = this._getExemptAssignees();
+        if (exemptAssignees.length === 0) {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `No assignee option was specified to skip the stale process for this $$type`);
+            this._logSkip();
+            return false;
+        }
+        this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `Found ${logger_service_1.LoggerService.cyan(exemptAssignees.length)} assignee${exemptAssignees.length > 1 ? 's' : ''} that can exempt stale on this $$type`);
+        const hasExemptAssignee = exemptAssignees.some((exemptAssignee) => this._hasAssignee(exemptAssignee));
+        if (!hasExemptAssignee) {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), 'No assignee on this $$type can exempt the stale process');
+            this._logSkip();
+        }
+        else {
+            this._issueLogger.info(logger_service_1.LoggerService.white('└──'), 'Skipping this $$type because it has an exempt assignee');
+        }
+        return hasExemptAssignee;
+    }
+    _getExemptAssignees() {
+        return this._issue.isPullRequest
+            ? this._getExemptPullRequestAssignees()
+            : this._getExemptIssueAssignees();
+    }
+    _getExemptIssueAssignees() {
+        if (this._options.exemptIssueAssignees === '') {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptIssueAssignees)} is disabled. No specific assignee can skip the stale process for this $$type`);
+            if (this._options.exemptAssignees === '') {
+                this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAssignees)} is disabled. No specific assignee can skip the stale process for this $$type`);
+                return [];
+            }
+            const exemptAssignees = words_to_list_1.wordsToList(this._options.exemptAssignees);
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAssignees)} is set. ${logger_service_1.LoggerService.cyan(exemptAssignees.length)} assignee${exemptAssignees.length === 1 ? '' : 's'} can skip the stale process for this $$type`);
+            return exemptAssignees;
+        }
+        const exemptAssignees = words_to_list_1.wordsToList(this._options.exemptIssueAssignees);
+        this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptIssueAssignees)} is set. ${logger_service_1.LoggerService.cyan(exemptAssignees.length)} assignee${exemptAssignees.length === 1 ? '' : 's'} can skip the stale process for this $$type`);
+        return exemptAssignees;
+    }
+    _getExemptPullRequestAssignees() {
+        if (this._options.exemptPrAssignees === '') {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptPrAssignees)} is disabled. No specific assignee can skip the stale process for this $$type`);
+            if (this._options.exemptAssignees === '') {
+                this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAssignees)} is disabled. No specific assignee can skip the stale process for this $$type`);
+                return [];
+            }
+            const exemptAssignees = words_to_list_1.wordsToList(this._options.exemptAssignees);
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAssignees)} is set. ${logger_service_1.LoggerService.cyan(exemptAssignees.length)} assignee${exemptAssignees.length === 1 ? '' : 's'} can skip the stale process for this $$type`);
+            return exemptAssignees;
+        }
+        const exemptAssignees = words_to_list_1.wordsToList(this._options.exemptPrAssignees);
+        this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptPrAssignees)} is set. ${logger_service_1.LoggerService.cyan(exemptAssignees.length)} assignee${exemptAssignees.length === 1 ? '' : 's'} can skip the stale process for this $$type`);
+        return exemptAssignees;
+    }
+    _hasAssignee(assignee) {
+        const cleanAssignee = Assignees._cleanAssignee(assignee);
+        return this._issue.assignees.some((issueAssignee) => {
+            const isSameAssignee = cleanAssignee === Assignees._cleanAssignee(issueAssignee.login);
+            if (isSameAssignee) {
+                this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `@${issueAssignee.login} is assigned on this $$type and is an exempt assignee`);
+            }
+            return isSameAssignee;
+        });
+    }
+    _shouldExemptAllAssignees() {
+        return this._issue.isPullRequest
+            ? this._shouldExemptAllPullRequestAssignees()
+            : this._shouldExemptAllIssueAssignees();
+    }
+    _shouldExemptAllIssueAssignees() {
+        if (this._options.exemptAllIssueAssignees === true) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllIssueAssignees)} is enabled. Any assignee on this $$type will skip the stale process`);
+            return true;
+        }
+        else if (this._options.exemptAllIssueAssignees === false) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllIssueAssignees)} is disabled. Only some specific assignees on this $$type will skip the stale process`);
+            return false;
+        }
+        this._logExemptAllAssigneesOption();
+        return this._options.exemptAllAssignees;
+    }
+    _shouldExemptAllPullRequestAssignees() {
+        if (this._options.exemptAllPrAssignees === true) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllPrAssignees)} is enabled. Any assignee on this $$type will skip the stale process`);
+            return true;
+        }
+        else if (this._options.exemptAllPrAssignees === false) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllPrAssignees)} is disabled. Only some specific assignees on this $$type will skip the stale process`);
+            return false;
+        }
+        this._logExemptAllAssigneesOption();
+        return this._options.exemptAllAssignees;
+    }
+    _logExemptAllAssigneesOption() {
+        if (this._options.exemptAllAssignees) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllAssignees)} is enabled. Any assignee on this $$type will skip the stale process`);
+        }
+        else {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllAssignees)} is disabled. Only some specific assignees on this $$type will skip the stale process`);
+        }
+    }
+    _logSkip() {
+        this._issueLogger.info(logger_service_1.LoggerService.white('└──'), 'Skip the assignees checks');
+    }
+}
+exports.Assignees = Assignees;
+
 
 /***/ }),
 
-/***/ 30:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ 4783:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Issue = void 0;
+const is_labeled_1 = __nccwpck_require__(6792);
+const is_pull_request_1 = __nccwpck_require__(5400);
+const operations_1 = __nccwpck_require__(7957);
+class Issue {
+    constructor(options, issue) {
+        this.operations = new operations_1.Operations();
+        this._options = options;
+        this.title = issue.title;
+        this.number = issue.number;
+        this.created_at = issue.created_at;
+        this.updated_at = issue.updated_at;
+        this.labels = issue.labels;
+        this.pull_request = issue.pull_request;
+        this.state = issue.state;
+        this.locked = issue.locked;
+        this.milestone = issue.milestone;
+        this.assignees = issue.assignees;
+        this.isStale = is_labeled_1.isLabeled(this, this.staleLabel);
+    }
+    get isPullRequest() {
+        return is_pull_request_1.isPullRequest(this);
+    }
+    get staleLabel() {
+        return this._getStaleLabel();
+    }
+    get hasAssignees() {
+        return this.assignees.length > 0;
+    }
+    _getStaleLabel() {
+        return this.isPullRequest
+            ? this._options.stalePrLabel
+            : this._options.staleIssueLabel;
+    }
+}
+exports.Issue = Issue;
+
+
+/***/ }),
+
+/***/ 3292:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.IssuesProcessor = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const github_1 = __nccwpck_require__(5438);
+const option_1 = __nccwpck_require__(5931);
+const get_humanized_date_1 = __nccwpck_require__(965);
+const is_date_more_recent_than_1 = __nccwpck_require__(1473);
+const is_valid_date_1 = __nccwpck_require__(891);
+const is_boolean_1 = __nccwpck_require__(8236);
+const is_labeled_1 = __nccwpck_require__(6792);
+const clean_label_1 = __nccwpck_require__(7752);
+const should_mark_when_stale_1 = __nccwpck_require__(2461);
+const words_to_list_1 = __nccwpck_require__(1883);
+const assignees_1 = __nccwpck_require__(7236);
+const issue_1 = __nccwpck_require__(4783);
+const issue_logger_1 = __nccwpck_require__(2984);
+const logger_1 = __nccwpck_require__(6212);
+const milestones_1 = __nccwpck_require__(4601);
+const stale_operations_1 = __nccwpck_require__(5080);
+const statistics_1 = __nccwpck_require__(3334);
+const logger_service_1 = __nccwpck_require__(1973);
+/***
+ * Handle processing of issues for staleness/closure.
+ */
+class IssuesProcessor {
+    constructor(options) {
+        this._logger = new logger_1.Logger();
+        this.staleIssues = [];
+        this.closedIssues = [];
+        this.deletedBranchIssues = [];
+        this.removedLabelIssues = [];
+        this.addedLabelIssues = [];
+        this.options = options;
+        this.client = github_1.getOctokit(this.options.repoToken);
+        this.operations = new stale_operations_1.StaleOperations(this.options);
+        this._logger.info(logger_service_1.LoggerService.yellow(`Starting the stale action process...`));
+        if (this.options.debugOnly) {
+            this._logger.warning(logger_service_1.LoggerService.yellowBright(`Executing in debug mode!`));
+            this._logger.warning(logger_service_1.LoggerService.yellowBright(`The debug output will be written but no issues/PRs will be processed.`));
+        }
+        if (this.options.enableStatistics) {
+            this._statistics = new statistics_1.Statistics();
+        }
+    }
+    static _updatedSince(timestamp, num_days) {
+        const daysInMillis = 1000 * 60 * 60 * 24 * num_days;
+        const millisSinceLastUpdated = new Date().getTime() - new Date(timestamp).getTime();
+        return millisSinceLastUpdated <= daysInMillis;
+    }
+    static _endIssueProcessing(issue) {
+        const consumedOperationsCount = issue.operations.getConsumedOperationsCount();
+        if (consumedOperationsCount > 0) {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(logger_service_1.LoggerService.cyan(consumedOperationsCount), `operation${consumedOperationsCount > 1 ? 's' : ''} consumed for this $$type`);
+        }
+    }
+    static _getStaleMessageUsedOptionName(issue) {
+        return issue.isPullRequest
+            ? option_1.Option.StalePrMessage
+            : option_1.Option.StaleIssueMessage;
+    }
+    static _getCloseLabelUsedOptionName(issue) {
+        return issue.isPullRequest ? option_1.Option.ClosePrLabel : option_1.Option.CloseIssueLabel;
+    }
+    processIssues(page = 1) {
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function* () {
+            // get the next batch of issues
+            const issues = yield this.getIssues(page);
+            if (issues.length <= 0) {
+                this._logger.info(logger_service_1.LoggerService.green(`No more issues found to process. Exiting...`));
+                (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.setOperationsCount(this.operations.getConsumedOperationsCount()).logStats();
+                return this.operations.getRemainingOperationsCount();
+            }
+            else {
+                this._logger.info(`${logger_service_1.LoggerService.yellow('Processing the batch of issues')} ${logger_service_1.LoggerService.cyan(`#${page}`)} ${logger_service_1.LoggerService.yellow('containing')} ${logger_service_1.LoggerService.cyan(issues.length)} ${logger_service_1.LoggerService.yellow(`issue${issues.length > 1 ? 's' : ''}...`)}`);
+            }
+            const labelsToAddWhenUnstale = words_to_list_1.wordsToList(this.options.labelsToAddWhenUnstale);
+            const labelsToRemoveWhenUnstale = words_to_list_1.wordsToList(this.options.labelsToRemoveWhenUnstale);
+            for (const issue of issues.values()) {
+                // Stop the processing if no more operations remains
+                if (!this.operations.hasRemainingOperations()) {
+                    break;
+                }
+                const issueLogger = new issue_logger_1.IssueLogger(issue);
+                yield issueLogger.grouping(`$$type #${issue.number}`, () => __awaiter(this, void 0, void 0, function* () {
+                    yield this.processIssue(issue, labelsToAddWhenUnstale, labelsToRemoveWhenUnstale);
+                }));
+            }
+            if (!this.operations.hasRemainingOperations()) {
+                this._logger.warning(logger_service_1.LoggerService.yellowBright(`No more operations left! Exiting...`));
+                this._logger.warning(`${logger_service_1.LoggerService.yellowBright('If you think that not enough issues were processed you could try to increase the quantity related to the')} ${this._logger.createOptionLink(option_1.Option.OperationsPerRun)} ${logger_service_1.LoggerService.yellowBright('option which is currently set to')} ${logger_service_1.LoggerService.cyan(this.options.operationsPerRun)}`);
+                (_b = this._statistics) === null || _b === void 0 ? void 0 : _b.setOperationsCount(this.operations.getConsumedOperationsCount()).logStats();
+                return 0;
+            }
+            this._logger.info(`${logger_service_1.LoggerService.green('Batch')} ${logger_service_1.LoggerService.cyan(`#${page}`)} ${logger_service_1.LoggerService.green('processed.')}`);
+            // Do the next batch
+            return this.processIssues(page + 1);
+        });
+    }
+    processIssue(issue, labelsToAddWhenUnstale, labelsToRemoveWhenUnstale) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementProcessedItemsCount(issue);
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`Found this $$type last updated at: ${logger_service_1.LoggerService.cyan(issue.updated_at)}`);
+            // calculate string based messages for this issue
+            const staleMessage = issue.isPullRequest
+                ? this.options.stalePrMessage
+                : this.options.staleIssueMessage;
+            const closeMessage = issue.isPullRequest
+                ? this.options.closePrMessage
+                : this.options.closeIssueMessage;
+            const staleLabel = issue.isPullRequest
+                ? this.options.stalePrLabel
+                : this.options.staleIssueLabel;
+            const closeLabel = issue.isPullRequest
+                ? this.options.closePrLabel
+                : this.options.closeIssueLabel;
+            const skipMessage = issue.isPullRequest
+                ? this.options.stalePrMessage.length === 0
+                : this.options.staleIssueMessage.length === 0;
+            const daysBeforeStale = issue.isPullRequest
+                ? this._getDaysBeforePrStale()
+                : this._getDaysBeforeIssueStale();
+            const onlyLabels = words_to_list_1.wordsToList(this._getOnlyLabels(issue));
+            if (onlyLabels.length > 0) {
+                issueLogger.info(`The option ${issueLogger.createOptionLink(option_1.Option.OnlyLabels)} was specified to only process issues and pull requests with all those labels (${logger_service_1.LoggerService.cyan(onlyLabels.length)})`);
+                const hasAllWhitelistedLabels = onlyLabels.every((label) => {
+                    return is_labeled_1.isLabeled(issue, label);
+                });
+                if (!hasAllWhitelistedLabels) {
+                    issueLogger.info(logger_service_1.LoggerService.white('└──'), `Skipping this $$type because it doesn't have all the required labels`);
+                    IssuesProcessor._endIssueProcessing(issue);
+                    return; // Don't process issues without all of the required labels
+                }
+                else {
+                    issueLogger.info(logger_service_1.LoggerService.white('├──'), `All the required labels are present on this $$type`);
+                    issueLogger.info(logger_service_1.LoggerService.white('└──'), `Continuing the process for this $$type`);
+                }
+            }
+            else {
+                issueLogger.info(`The option ${issueLogger.createOptionLink(option_1.Option.OnlyLabels)} was not specified`);
+                issueLogger.info(logger_service_1.LoggerService.white('└──'), `Continuing the process for this $$type`);
+            }
+            issueLogger.info(`Days before $$type stale: ${logger_service_1.LoggerService.cyan(daysBeforeStale)}`);
+            const shouldMarkAsStale = should_mark_when_stale_1.shouldMarkWhenStale(daysBeforeStale);
+            if (issue.state === 'closed') {
+                issueLogger.info(`Skipping this $$type because it is closed`);
+                IssuesProcessor._endIssueProcessing(issue);
+                return; // Don't process closed issues
+            }
+            if (issue.locked) {
+                issueLogger.info(`Skipping this $$type because it is locked`);
+                IssuesProcessor._endIssueProcessing(issue);
+                return; // Don't process locked issues
+            }
+            // Try to remove the close label when not close/locked issue or PR
+            yield this._removeCloseLabel(issue, closeLabel);
+            if (this.options.startDate) {
+                const startDate = new Date(this.options.startDate);
+                const createdAt = new Date(issue.created_at);
+                issueLogger.info(`A start date was specified for the ${get_humanized_date_1.getHumanizedDate(startDate)} (${logger_service_1.LoggerService.cyan(this.options.startDate)})`);
+                // Expecting that GitHub will always set a creation date on the issues and PRs
+                // But you never know!
+                if (!is_valid_date_1.isValidDate(createdAt)) {
+                    IssuesProcessor._endIssueProcessing(issue);
+                    core.setFailed(new Error(`Invalid issue field: "created_at". Expected a valid date`));
+                }
+                issueLogger.info(`$$type created the ${get_humanized_date_1.getHumanizedDate(createdAt)} (${logger_service_1.LoggerService.cyan(issue.created_at)})`);
+                if (!is_date_more_recent_than_1.isDateMoreRecentThan(createdAt, startDate)) {
+                    issueLogger.info(`Skipping this $$type because it was created before the specified start date`);
+                    IssuesProcessor._endIssueProcessing(issue);
+                    return; // Don't process issues which were created before the start date
+                }
+            }
+            if (issue.isStale) {
+                issueLogger.info(`This $$type has a stale label`);
+            }
+            else {
+                issueLogger.info(`This $$type hasn't a stale label`);
+            }
+            const exemptLabels = words_to_list_1.wordsToList(issue.isPullRequest
+                ? this.options.exemptPrLabels
+                : this.options.exemptIssueLabels);
+            if (exemptLabels.some((exemptLabel) => is_labeled_1.isLabeled(issue, exemptLabel))) {
+                if (issue.isStale) {
+                    issueLogger.info(`An exempt label was added after the stale label.`);
+                    yield this._removeStaleLabel(issue, staleLabel);
+                }
+                issueLogger.info(`Skipping this $$type because it has an exempt label`);
+                IssuesProcessor._endIssueProcessing(issue);
+                return; // Don't process exempt issues
+            }
+            const anyOfLabels = words_to_list_1.wordsToList(this._getAnyOfLabels(issue));
+            if (anyOfLabels.length > 0) {
+                issueLogger.info(`The option ${issueLogger.createOptionLink(option_1.Option.AnyOfLabels)} was specified to only process the issues and pull requests with one of those labels (${logger_service_1.LoggerService.cyan(anyOfLabels.length)})`);
+                const hasOneOfWhitelistedLabels = anyOfLabels.some((label) => {
+                    return is_labeled_1.isLabeled(issue, label);
+                });
+                if (!hasOneOfWhitelistedLabels) {
+                    issueLogger.info(logger_service_1.LoggerService.white('└──'), `Skipping this $$type because it doesn't have one of the required labels`);
+                    IssuesProcessor._endIssueProcessing(issue);
+                    return; // Don't process issues without any of the required labels
+                }
+                else {
+                    issueLogger.info(logger_service_1.LoggerService.white('├──'), `One of the required labels is present on this $$type`);
+                    issueLogger.info(logger_service_1.LoggerService.white('└──'), `Continuing the process for this $$type`);
+                }
+            }
+            else {
+                issueLogger.info(`The option ${issueLogger.createOptionLink(option_1.Option.AnyOfLabels)} was not specified`);
+                issueLogger.info(logger_service_1.LoggerService.white('└──'), `Continuing the process for this $$type`);
+            }
+            const milestones = new milestones_1.Milestones(this.options, issue);
+            if (milestones.shouldExemptMilestones()) {
+                IssuesProcessor._endIssueProcessing(issue);
+                return; // Don't process exempt milestones
+            }
+            const assignees = new assignees_1.Assignees(this.options, issue);
+            if (assignees.shouldExemptAssignees()) {
+                IssuesProcessor._endIssueProcessing(issue);
+                return; // Don't process exempt assignees
+            }
+            // Should this issue be marked stale?
+            const shouldBeStale = !IssuesProcessor._updatedSince(issue.updated_at, daysBeforeStale);
+            // Determine if this issue needs to be marked stale first
+            if (!issue.isStale) {
+                issueLogger.info(`This $$type is not stale`);
+                const updatedAtDate = new Date(issue.updated_at);
+                if (shouldBeStale) {
+                    issueLogger.info(`This $$type should be stale based on the last update date the ${get_humanized_date_1.getHumanizedDate(updatedAtDate)} (${logger_service_1.LoggerService.cyan(issue.updated_at)})`);
+                    if (shouldMarkAsStale) {
+                        issueLogger.info(`This $$type should be marked as stale based on the option ${issueLogger.createOptionLink(this._getDaysBeforeStaleUsedOptionName(issue))} (${logger_service_1.LoggerService.cyan(daysBeforeStale)})`);
+                        yield this._markStale(issue, staleMessage, staleLabel, skipMessage);
+                        issue.isStale = true; // This issue is now considered stale
+                        issueLogger.info(`This $$type is now stale`);
+                    }
+                    else {
+                        issueLogger.info(`This $$type should not be marked as stale based on the option ${issueLogger.createOptionLink(this._getDaysBeforeStaleUsedOptionName(issue))} (${logger_service_1.LoggerService.cyan(daysBeforeStale)})`);
+                    }
+                }
+                else {
+                    issueLogger.info(`This $$type should not be stale based on the last update date the ${get_humanized_date_1.getHumanizedDate(updatedAtDate)} (${logger_service_1.LoggerService.cyan(issue.updated_at)})`);
+                }
+            }
+            // Process the issue if it was marked stale
+            if (issue.isStale) {
+                issueLogger.info(`This $$type is already stale`);
+                yield this._processStaleIssue(issue, staleLabel, staleMessage, labelsToAddWhenUnstale, labelsToRemoveWhenUnstale, closeMessage, closeLabel);
+            }
+            IssuesProcessor._endIssueProcessing(issue);
+        });
+    }
+    // Grab comments for an issue since a given date
+    listIssueComments(issueNumber, sinceDate) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            // Find any comments since date on the given issue
+            try {
+                this.operations.consumeOperation();
+                (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementFetchedItemsCommentsCount();
+                const comments = yield this.client.issues.listComments({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    issue_number: issueNumber,
+                    since: sinceDate
+                });
+                return comments.data;
+            }
+            catch (error) {
+                this._logger.error(`List issue comments error: ${error.message}`);
+                return Promise.resolve([]);
+            }
+        });
+    }
+    // grab issues from github in batches of 100
+    getIssues(page) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            // generate type for response
+            const endpoint = this.client.issues.listForRepo;
+            try {
+                this.operations.consumeOperation();
+                const issueResult = yield this.client.issues.listForRepo({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    state: 'open',
+                    per_page: 100,
+                    direction: this.options.ascending ? 'asc' : 'desc',
+                    page
+                });
+                (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementFetchedItemsCount(issueResult.data.length);
+                return issueResult.data.map((issue) => new issue_1.Issue(this.options, issue));
+            }
+            catch (error) {
+                this._logger.error(`Get issues for repo error: ${error.message}`);
+                return Promise.resolve([]);
+            }
+        });
+    }
+    // returns the creation date of a given label on an issue (or nothing if no label existed)
+    ///see https://developer.github.com/v3/activity/events/
+    getLabelCreationDate(issue, label) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`Checking for label on this $$type`);
+            this._consumeIssueOperation(issue);
+            (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementFetchedItemsEventsCount();
+            const options = this.client.issues.listEvents.endpoint.merge({
+                owner: github_1.context.repo.owner,
+                repo: github_1.context.repo.repo,
+                per_page: 100,
+                issue_number: issue.number
+            });
+            const events = yield this.client.paginate(options);
+            const reversedEvents = events.reverse();
+            const staleLabeledEvent = reversedEvents.find(event => event.event === 'labeled' && clean_label_1.cleanLabel(event.label.name) === clean_label_1.cleanLabel(label));
+            if (!staleLabeledEvent) {
+                // Must be old rather than labeled
+                return undefined;
+            }
+            return staleLabeledEvent.created_at;
+        });
+    }
+    // handle all of the stale issue logic when we find a stale issue
+    _processStaleIssue(issue, staleLabel, staleMessage, labelsToAddWhenUnstale, labelsToRemoveWhenUnstale, closeMessage, closeLabel) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            const markedStaleOn = (yield this.getLabelCreationDate(issue, staleLabel)) || issue.updated_at;
+            issueLogger.info(`$$type marked stale on: ${logger_service_1.LoggerService.cyan(markedStaleOn)}`);
+            const issueHasComments = yield this._hasCommentsSince(issue, markedStaleOn, staleMessage);
+            issueLogger.info(`$$type has been commented on: ${logger_service_1.LoggerService.cyan(issueHasComments)}`);
+            const daysBeforeClose = issue.isPullRequest
+                ? this._getDaysBeforePrClose()
+                : this._getDaysBeforeIssueClose();
+            issueLogger.info(`Days before $$type close: ${logger_service_1.LoggerService.cyan(daysBeforeClose)}`);
+            const issueHasUpdate = IssuesProcessor._updatedSince(issue.updated_at, daysBeforeClose);
+            issueLogger.info(`$$type has been updated: ${logger_service_1.LoggerService.cyan(issueHasUpdate)}`);
+            const shouldRemoveStaleWhenUpdated = this._shouldRemoveStaleWhenUpdated(issue);
+            issueLogger.info(`The option ${issueLogger.createOptionLink(this._getRemoveStaleWhenUpdatedUsedOptionName(issue))} is: ${logger_service_1.LoggerService.cyan(shouldRemoveStaleWhenUpdated)}`);
+            if (shouldRemoveStaleWhenUpdated) {
+                issueLogger.info(`The stale label should not be removed`);
+            }
+            else {
+                issueLogger.info(`The stale label should be removed if all conditions met`);
+            }
+            // Should we un-stale this issue?
+            if (shouldRemoveStaleWhenUpdated && issueHasComments) {
+                issueLogger.info(`Remove the stale label since the $$type has a comment and the workflow should remove the stale label when updated`);
+                yield this._removeStaleLabel(issue, staleLabel);
+                // Are there labels to remove or add when an issue is no longer stale?
+                yield this._removeLabelsWhenUnstale(issue, labelsToRemoveWhenUnstale);
+                yield this._addLabelsWhenUnstale(issue, labelsToAddWhenUnstale);
+                issueLogger.info(`Skipping the process since the $$type is now un-stale`);
+                return; // Nothing to do because it is no longer stale
+            }
+            // Now start closing logic
+            if (daysBeforeClose < 0) {
+                return; // Nothing to do because we aren't closing stale issues
+            }
+            if (!issueHasComments && !issueHasUpdate) {
+                issueLogger.info(`Closing $$type because it was last updated on: ${logger_service_1.LoggerService.cyan(issue.updated_at)}`);
+                yield this._closeIssue(issue, closeMessage, closeLabel);
+                if (this.options.deleteBranch && issue.pull_request) {
+                    issueLogger.info(`Deleting the branch since the option ${issueLogger.createOptionLink(option_1.Option.DeleteBranch)} was specified`);
+                    yield this._deleteBranch(issue);
+                    this.deletedBranchIssues.push(issue);
+                }
+            }
+            else {
+                issueLogger.info(`Stale $$type is not old enough to close yet (hasComments? ${issueHasComments}, hasUpdate? ${issueHasUpdate})`);
+            }
+        });
+    }
+    // checks to see if a given issue is still stale (has had activity on it)
+    _hasCommentsSince(issue, sinceDate, staleMessage) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`Checking for comments on $$type since: ${logger_service_1.LoggerService.cyan(sinceDate)}`);
+            if (!sinceDate) {
+                return true;
+            }
+            // find any comments since the date
+            const comments = yield this.listIssueComments(issue.number, sinceDate);
+            const filteredComments = comments.filter(comment => comment.user.type === 'User' &&
+                comment.body.toLowerCase() !== staleMessage.toLowerCase());
+            issueLogger.info(`Comments that are not the stale comment or another bot: ${logger_service_1.LoggerService.cyan(filteredComments.length)}`);
+            // if there are any user comments returned
+            return filteredComments.length > 0;
+        });
+    }
+    // Mark an issue as stale with a comment and a label
+    _markStale(issue, staleMessage, staleLabel, skipMessage) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`Marking this $$type as stale`);
+            this.staleIssues.push(issue);
+            // if the issue is being marked stale, the updated date should be changed to right now
+            // so that close calculations work correctly
+            const newUpdatedAtDate = new Date();
+            issue.updated_at = newUpdatedAtDate.toString();
+            if (!skipMessage) {
+                try {
+                    this._consumeIssueOperation(issue);
+                    (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementAddedItemsComment(issue);
+                    if (!this.options.debugOnly) {
+                        yield this.client.issues.createComment({
+                            owner: github_1.context.repo.owner,
+                            repo: github_1.context.repo.repo,
+                            issue_number: issue.number,
+                            body: staleMessage
+                        });
+                    }
+                }
+                catch (error) {
+                    issueLogger.error(`Error when creating a comment: ${error.message}`);
+                }
+            }
+            try {
+                this._consumeIssueOperation(issue);
+                (_b = this._statistics) === null || _b === void 0 ? void 0 : _b.incrementAddedItemsLabel(issue);
+                (_c = this._statistics) === null || _c === void 0 ? void 0 : _c.incrementStaleItemsCount(issue);
+                if (!this.options.debugOnly) {
+                    yield this.client.issues.addLabels({
+                        owner: github_1.context.repo.owner,
+                        repo: github_1.context.repo.repo,
+                        issue_number: issue.number,
+                        labels: [staleLabel]
+                    });
+                }
+            }
+            catch (error) {
+                issueLogger.error(`Error when adding a label: ${error.message}`);
+            }
+        });
+    }
+    // Close an issue based on staleness
+    _closeIssue(issue, closeMessage, closeLabel) {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`Closing $$type for being stale`);
+            this.closedIssues.push(issue);
+            if (closeMessage) {
+                try {
+                    this._consumeIssueOperation(issue);
+                    (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementAddedItemsComment(issue);
+                    if (!this.options.debugOnly) {
+                        yield this.client.issues.createComment({
+                            owner: github_1.context.repo.owner,
+                            repo: github_1.context.repo.repo,
+                            issue_number: issue.number,
+                            body: closeMessage
+                        });
+                    }
+                }
+                catch (error) {
+                    issueLogger.error(`Error when creating a comment: ${error.message}`);
+                }
+            }
+            if (closeLabel) {
+                try {
+                    this._consumeIssueOperation(issue);
+                    (_b = this._statistics) === null || _b === void 0 ? void 0 : _b.incrementAddedItemsLabel(issue);
+                    if (!this.options.debugOnly) {
+                        yield this.client.issues.addLabels({
+                            owner: github_1.context.repo.owner,
+                            repo: github_1.context.repo.repo,
+                            issue_number: issue.number,
+                            labels: [closeLabel]
+                        });
+                    }
+                }
+                catch (error) {
+                    issueLogger.error(`Error when adding a label: ${error.message}`);
+                }
+            }
+            try {
+                this._consumeIssueOperation(issue);
+                (_c = this._statistics) === null || _c === void 0 ? void 0 : _c.incrementClosedItemsCount(issue);
+                if (!this.options.debugOnly) {
+                    yield this.client.issues.update({
+                        owner: github_1.context.repo.owner,
+                        repo: github_1.context.repo.repo,
+                        issue_number: issue.number,
+                        state: 'closed'
+                    });
+                }
+            }
+            catch (error) {
+                issueLogger.error(`Error when updating this $$type: ${error.message}`);
+            }
+        });
+    }
+    _getPullRequest(issue) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            try {
+                this._consumeIssueOperation(issue);
+                (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementFetchedPullRequestsCount();
+                const pullRequest = yield this.client.pulls.get({
+                    owner: github_1.context.repo.owner,
+                    repo: github_1.context.repo.repo,
+                    pull_number: issue.number
+                });
+                return pullRequest.data;
+            }
+            catch (error) {
+                issueLogger.error(`Error when getting this $$type: ${error.message}`);
+            }
+        });
+    }
+    // Delete the branch on closed pull request
+    _deleteBranch(issue) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`Delete branch from closed $$type - ${issue.title}`);
+            const pullRequest = yield this._getPullRequest(issue);
+            if (!pullRequest) {
+                issueLogger.info(`Not deleting this branch as no pull request was found for this $$type`);
+                return;
+            }
+            const branch = pullRequest.head.ref;
+            issueLogger.info(`Deleting the branch "${logger_service_1.LoggerService.cyan(branch)}" from closed $$type`);
+            try {
+                this._consumeIssueOperation(issue);
+                (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementDeletedBranchesCount();
+                if (!this.options.debugOnly) {
+                    yield this.client.git.deleteRef({
+                        owner: github_1.context.repo.owner,
+                        repo: github_1.context.repo.repo,
+                        ref: `heads/${branch}`
+                    });
+                }
+            }
+            catch (error) {
+                issueLogger.error(`Error when deleting the branch "${logger_service_1.LoggerService.cyan(branch)}" from $$type: ${error.message}`);
+            }
+        });
+    }
+    // Remove a label from an issue or a pull request
+    _removeLabel(issue, label, isSubStep = false) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`${isSubStep ? logger_service_1.LoggerService.white('├── ') : ''}Removing the label "${logger_service_1.LoggerService.cyan(label)}" from this $$type...`);
+            this.removedLabelIssues.push(issue);
+            try {
+                this._consumeIssueOperation(issue);
+                (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementDeletedItemsLabelsCount(issue);
+                if (!this.options.debugOnly) {
+                    yield this.client.issues.removeLabel({
+                        owner: github_1.context.repo.owner,
+                        repo: github_1.context.repo.repo,
+                        issue_number: issue.number,
+                        name: label
+                    });
+                }
+                issueLogger.info(`${isSubStep ? logger_service_1.LoggerService.white('└── ') : ''}The label "${logger_service_1.LoggerService.cyan(label)}" was removed`);
+            }
+            catch (error) {
+                issueLogger.error(`${isSubStep ? logger_service_1.LoggerService.white('└── ') : ''}Error when removing the label: "${logger_service_1.LoggerService.cyan(error.message)}"`);
+            }
+        });
+    }
+    _getDaysBeforeIssueStale() {
+        return isNaN(this.options.daysBeforeIssueStale)
+            ? this.options.daysBeforeStale
+            : this.options.daysBeforeIssueStale;
+    }
+    _getDaysBeforePrStale() {
+        return isNaN(this.options.daysBeforePrStale)
+            ? this.options.daysBeforeStale
+            : this.options.daysBeforePrStale;
+    }
+    _getDaysBeforeIssueClose() {
+        return isNaN(this.options.daysBeforeIssueClose)
+            ? this.options.daysBeforeClose
+            : this.options.daysBeforeIssueClose;
+    }
+    _getDaysBeforePrClose() {
+        return isNaN(this.options.daysBeforePrClose)
+            ? this.options.daysBeforeClose
+            : this.options.daysBeforePrClose;
+    }
+    _getOnlyLabels(issue) {
+        if (issue.isPullRequest) {
+            if (this.options.onlyPrLabels !== '') {
+                return this.options.onlyPrLabels;
+            }
+        }
+        else {
+            if (this.options.onlyIssueLabels !== '') {
+                return this.options.onlyIssueLabels;
+            }
+        }
+        return this.options.onlyLabels;
+    }
+    _getAnyOfLabels(issue) {
+        if (issue.isPullRequest) {
+            if (this.options.anyOfPrLabels !== '') {
+                return this.options.anyOfPrLabels;
+            }
+        }
+        else {
+            if (this.options.anyOfIssueLabels !== '') {
+                return this.options.anyOfIssueLabels;
+            }
+        }
+        return this.options.anyOfLabels;
+    }
+    _shouldRemoveStaleWhenUpdated(issue) {
+        if (issue.isPullRequest) {
+            if (is_boolean_1.isBoolean(this.options.removePrStaleWhenUpdated)) {
+                return this.options.removePrStaleWhenUpdated;
+            }
+            return this.options.removeStaleWhenUpdated;
+        }
+        if (is_boolean_1.isBoolean(this.options.removeIssueStaleWhenUpdated)) {
+            return this.options.removeIssueStaleWhenUpdated;
+        }
+        return this.options.removeStaleWhenUpdated;
+    }
+    _removeLabelsWhenUnstale(issue, removeLabels) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!removeLabels.length) {
+                return;
+            }
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`Removing all the labels specified via the ${this._logger.createOptionLink(option_1.Option.LabelsToRemoveWhenUnstale)} option.`);
+            for (const label of removeLabels.values()) {
+                yield this._removeLabel(issue, label);
+            }
+        });
+    }
+    _addLabelsWhenUnstale(issue, labelsToAdd) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!labelsToAdd.length) {
+                return;
+            }
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`Adding all the labels specified via the ${this._logger.createOptionLink(option_1.Option.LabelsToAddWhenUnstale)} option.`);
+            this.addedLabelIssues.push(issue);
+            try {
+                this.operations.consumeOperation();
+                (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementAddedItemsLabel(issue);
+                if (!this.options.debugOnly) {
+                    yield this.client.issues.addLabels({
+                        owner: github_1.context.repo.owner,
+                        repo: github_1.context.repo.repo,
+                        issue_number: issue.number,
+                        labels: labelsToAdd
+                    });
+                }
+            }
+            catch (error) {
+                this._logger.error(`Error when adding labels after updated from stale: ${error.message}`);
+            }
+        });
+    }
+    _removeStaleLabel(issue, staleLabel) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`The $$type is no longer stale. Removing the stale label...`);
+            yield this._removeLabel(issue, staleLabel);
+            (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementUndoStaleItemsCount(issue);
+        });
+    }
+    _removeCloseLabel(issue, closeLabel) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueLogger = new issue_logger_1.IssueLogger(issue);
+            issueLogger.info(`The $$type is not closed nor locked. Trying to remove the close label...`);
+            if (!closeLabel) {
+                issueLogger.info(logger_service_1.LoggerService.white('├──'), `The ${issueLogger.createOptionLink(IssuesProcessor._getCloseLabelUsedOptionName(issue))} option was not set`);
+                issueLogger.info(logger_service_1.LoggerService.white('└──'), `Skipping the removal of the close label`);
+                return Promise.resolve();
+            }
+            if (is_labeled_1.isLabeled(issue, closeLabel)) {
+                issueLogger.info(logger_service_1.LoggerService.white('├──'), `The $$type has a close label "${logger_service_1.LoggerService.cyan(closeLabel)}". Removing the close label...`);
+                yield this._removeLabel(issue, closeLabel, true);
+                (_a = this._statistics) === null || _a === void 0 ? void 0 : _a.incrementDeletedCloseItemsLabelsCount(issue);
+            }
+            else {
+                issueLogger.info(logger_service_1.LoggerService.white('└──'), `There is no close label on this $$type. Skipping`);
+                return Promise.resolve();
+            }
+        });
+    }
+    _consumeIssueOperation(issue) {
+        this.operations.consumeOperation();
+        issue.operations.consumeOperation();
+    }
+    _getDaysBeforeStaleUsedOptionName(issue) {
+        return issue.isPullRequest
+            ? this._getDaysBeforePrStaleUsedOptionName()
+            : this._getDaysBeforeIssueStaleUsedOptionName();
+    }
+    _getDaysBeforeIssueStaleUsedOptionName() {
+        return isNaN(this.options.daysBeforeIssueStale)
+            ? option_1.Option.DaysBeforeStale
+            : option_1.Option.DaysBeforeIssueStale;
+    }
+    _getDaysBeforePrStaleUsedOptionName() {
+        return isNaN(this.options.daysBeforePrStale)
+            ? option_1.Option.DaysBeforeStale
+            : option_1.Option.DaysBeforePrStale;
+    }
+    _getRemoveStaleWhenUpdatedUsedOptionName(issue) {
+        if (issue.isPullRequest) {
+            if (is_boolean_1.isBoolean(this.options.removePrStaleWhenUpdated)) {
+                return option_1.Option.RemovePrStaleWhenUpdated;
+            }
+            return option_1.Option.RemoveStaleWhenUpdated;
+        }
+        if (is_boolean_1.isBoolean(this.options.removeIssueStaleWhenUpdated)) {
+            return option_1.Option.RemoveIssueStaleWhenUpdated;
+        }
+        return option_1.Option.RemoveStaleWhenUpdated;
+    }
+}
+exports.IssuesProcessor = IssuesProcessor;
+
+
+/***/ }),
+
+/***/ 2984:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.IssueLogger = void 0;
+const logger_1 = __nccwpck_require__(6212);
+const logger_service_1 = __nccwpck_require__(1973);
+/**
+ * @description
+ * Each log will prefix the message with the issue number
+ *
+ * @example
+ * warning('No stale') => "[#123] No stale"
+ *
+ * Each log method can have special tokens:
+ * - $$type => will replace this by either "pull request" or "issue" depending of the type of issue
+ *
+ * @example
+ * warning('The $$type will stale') => "The pull request will stale"
+ */
+class IssueLogger extends logger_1.Logger {
+    constructor(issue) {
+        super();
+        this._issue = issue;
+    }
+    warning(...message) {
+        super.warning(this._format(...message));
+    }
+    info(...message) {
+        super.info(this._format(...message));
+    }
+    error(...message) {
+        super.error(this._format(...message));
+    }
+    grouping(message, fn) {
+        const _super = Object.create(null, {
+            grouping: { get: () => super.grouping }
+        });
+        return __awaiter(this, void 0, void 0, function* () {
+            return _super.grouping.call(this, this._format(message), fn);
+        });
+    }
+    _replaceTokens(message) {
+        return this._replaceTypeToken(message);
+    }
+    _replaceTypeToken(message) {
+        return message
+            .replace(/^\$\$type/, this._issue.isPullRequest ? 'Pull request' : 'Issue')
+            .replace(/\$\$type/g, this._issue.isPullRequest ? 'pull request' : 'issue');
+    }
+    _prefixWithIssueNumber(message) {
+        return `${this._getPrefix()} ${message}`;
+    }
+    _getIssueNumber() {
+        return this._issue.number;
+    }
+    _format(...message) {
+        return this._prefixWithIssueNumber(this._replaceTokens(message.join(' ')));
+    }
+    _getPrefix() {
+        return this._issue.isPullRequest
+            ? this._getPullRequestPrefix()
+            : this._getIssuePrefix();
+    }
+    _getIssuePrefix() {
+        return logger_service_1.LoggerService.red(`[#${this._getIssueNumber()}]`);
+    }
+    _getPullRequestPrefix() {
+        return logger_service_1.LoggerService.blue(`[#${this._getIssueNumber()}]`);
+    }
+}
+exports.IssueLogger = IssueLogger;
+
+
+/***/ }),
+
+/***/ 6212:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Logger = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const terminal_link_1 = __importDefault(__nccwpck_require__(1898));
+const logger_service_1 = __nccwpck_require__(1973);
+class Logger {
+    warning(...message) {
+        core.warning(logger_service_1.LoggerService.whiteBright(message.join(' ')));
+    }
+    info(...message) {
+        core.info(logger_service_1.LoggerService.whiteBright(message.join(' ')));
+    }
+    error(...message) {
+        core.error(logger_service_1.LoggerService.whiteBright(message.join(' ')));
+    }
+    grouping(message, fn) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return core.group(logger_service_1.LoggerService.whiteBright(message), fn);
+        });
+    }
+    createLink(name, link) {
+        return terminal_link_1.default(name, link);
+    }
+    createOptionLink(option) {
+        return logger_service_1.LoggerService.magenta(this.createLink(option, `https://github.com/actions/stale#${option}`));
+    }
+}
+exports.Logger = Logger;
+
+
+/***/ }),
+
+/***/ 4601:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Milestones = void 0;
+const lodash_deburr_1 = __importDefault(__nccwpck_require__(1601));
+const option_1 = __nccwpck_require__(5931);
+const words_to_list_1 = __nccwpck_require__(1883);
+const issue_logger_1 = __nccwpck_require__(2984);
+const logger_service_1 = __nccwpck_require__(1973);
+class Milestones {
+    constructor(options, issue) {
+        this._options = options;
+        this._issue = issue;
+        this._issueLogger = new issue_logger_1.IssueLogger(issue);
+    }
+    static _cleanMilestone(milestone) {
+        return lodash_deburr_1.default(milestone.toLowerCase());
+    }
+    shouldExemptMilestones() {
+        if (!this._issue.milestone) {
+            this._issueLogger.info('This $$type has no milestone');
+            this._logSkip();
+            return false;
+        }
+        if (this._shouldExemptAllMilestones()) {
+            this._issueLogger.info(logger_service_1.LoggerService.white('└──'), 'Skipping this $$type because it has a milestone');
+            return true;
+        }
+        const exemptMilestones = this._getExemptMilestones();
+        if (exemptMilestones.length === 0) {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `No milestone option was specified to skip the stale process for this $$type`);
+            this._logSkip();
+            return false;
+        }
+        this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `Found ${logger_service_1.LoggerService.cyan(exemptMilestones.length)} milestone${exemptMilestones.length > 1 ? 's' : ''} that can exempt stale on this $$type`);
+        const hasExemptMilestone = exemptMilestones.some((exemptMilestone) => this._hasMilestone(exemptMilestone));
+        if (!hasExemptMilestone) {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), 'No milestone on this $$type can exempt the stale process');
+            this._logSkip();
+        }
+        else {
+            this._issueLogger.info(logger_service_1.LoggerService.white('└──'), 'Skipping this $$type because it has an exempt milestone');
+        }
+        return hasExemptMilestone;
+    }
+    _getExemptMilestones() {
+        return this._issue.isPullRequest
+            ? this._getExemptPullRequestMilestones()
+            : this._getExemptIssueMilestones();
+    }
+    _getExemptIssueMilestones() {
+        if (this._options.exemptIssueMilestones === '') {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptIssueMilestones)} is disabled. No specific milestone can skip the stale process for this $$type`);
+            if (this._options.exemptMilestones === '') {
+                this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptMilestones)} is disabled. No specific milestone can skip the stale process for this $$type`);
+                return [];
+            }
+            const exemptMilestones = words_to_list_1.wordsToList(this._options.exemptMilestones);
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptMilestones)} is set. ${logger_service_1.LoggerService.cyan(exemptMilestones.length)} milestone${exemptMilestones.length === 1 ? '' : 's'} can skip the stale process for this $$type`);
+            return exemptMilestones;
+        }
+        const exemptMilestones = words_to_list_1.wordsToList(this._options.exemptIssueMilestones);
+        this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptIssueMilestones)} is set. ${logger_service_1.LoggerService.cyan(exemptMilestones.length)} milestone${exemptMilestones.length === 1 ? '' : 's'} can skip the stale process for this $$type`);
+        return exemptMilestones;
+    }
+    _getExemptPullRequestMilestones() {
+        if (this._options.exemptPrMilestones === '') {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptPrMilestones)} is disabled. No specific milestone can skip the stale process for this $$type`);
+            if (this._options.exemptMilestones === '') {
+                this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptMilestones)} is disabled. No specific milestone can skip the stale process for this $$type`);
+                return [];
+            }
+            const exemptMilestones = words_to_list_1.wordsToList(this._options.exemptMilestones);
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptMilestones)} is set. ${logger_service_1.LoggerService.cyan(exemptMilestones.length)} milestone${exemptMilestones.length === 1 ? '' : 's'} can skip the stale process for this $$type`);
+            return exemptMilestones;
+        }
+        const exemptMilestones = words_to_list_1.wordsToList(this._options.exemptPrMilestones);
+        this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptPrMilestones)} is set. ${logger_service_1.LoggerService.cyan(exemptMilestones.length)} milestone${exemptMilestones.length === 1 ? '' : 's'} can skip the stale process for this $$type`);
+        return exemptMilestones;
+    }
+    _hasMilestone(milestone) {
+        if (!this._issue.milestone) {
+            return false;
+        }
+        const cleanMilestone = Milestones._cleanMilestone(milestone);
+        const isSameMilestone = cleanMilestone ===
+            Milestones._cleanMilestone(this._issue.milestone.title);
+        if (isSameMilestone) {
+            this._issueLogger.info(logger_service_1.LoggerService.white('├──'), `The milestone "${logger_service_1.LoggerService.cyan(milestone)}" is set on this $$type and is an exempt milestone`);
+        }
+        return isSameMilestone;
+    }
+    _shouldExemptAllMilestones() {
+        if (this._issue.milestone) {
+            return this._issue.isPullRequest
+                ? this._shouldExemptAllPullRequestMilestones()
+                : this._shouldExemptAllIssueMilestones();
+        }
+        return false;
+    }
+    _shouldExemptAllIssueMilestones() {
+        if (this._options.exemptAllIssueMilestones === true) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllIssueMilestones)} is enabled. Any milestone on this $$type will skip the stale process`);
+            return true;
+        }
+        else if (this._options.exemptAllIssueMilestones === false) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllIssueMilestones)} is disabled. Only some specific milestones on this $$type will skip the stale process`);
+            return false;
+        }
+        this._logExemptAllMilestonesOption();
+        return this._options.exemptAllMilestones;
+    }
+    _shouldExemptAllPullRequestMilestones() {
+        if (this._options.exemptAllPrMilestones === true) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllPrMilestones)} is enabled. Any milestone on this $$type will skip the stale process`);
+            return true;
+        }
+        else if (this._options.exemptAllPrMilestones === false) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllPrMilestones)} is disabled. Only some specific milestones on this $$type will skip the stale process`);
+            return false;
+        }
+        this._logExemptAllMilestonesOption();
+        return this._options.exemptAllMilestones;
+    }
+    _logExemptAllMilestonesOption() {
+        if (this._options.exemptAllMilestones) {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllMilestones)} is enabled. Any milestone on this $$type will skip the stale process`);
+        }
+        else {
+            this._issueLogger.info(`The option ${this._issueLogger.createOptionLink(option_1.Option.ExemptAllMilestones)} is disabled. Only some specific milestones on this $$type will skip the stale process`);
+        }
+    }
+    _logSkip() {
+        this._issueLogger.info(logger_service_1.LoggerService.white('└──'), 'Skip the milestones checks');
+    }
+}
+exports.Milestones = Milestones;
+
+
+/***/ }),
+
+/***/ 7957:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Operations = void 0;
+class Operations {
+    constructor() {
+        this._operationsConsumed = 0;
+    }
+    consumeOperation() {
+        return this.consumeOperations(1);
+    }
+    consumeOperations(quantity) {
+        this._operationsConsumed += quantity;
+        return this;
+    }
+    getConsumedOperationsCount() {
+        return this._operationsConsumed;
+    }
+}
+exports.Operations = Operations;
+
+
+/***/ }),
+
+/***/ 5080:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.StaleOperations = void 0;
+const operations_1 = __nccwpck_require__(7957);
+class StaleOperations extends operations_1.Operations {
+    constructor(options) {
+        super();
+        this._options = options;
+    }
+    hasRemainingOperations() {
+        return this._operationsConsumed < this._options.operationsPerRun;
+    }
+    getRemainingOperationsCount() {
+        return this._options.operationsPerRun - this._operationsConsumed;
+    }
+}
+exports.StaleOperations = StaleOperations;
+
+
+/***/ }),
+
+/***/ 3334:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Statistics = void 0;
+const logger_1 = __nccwpck_require__(6212);
+const logger_service_1 = __nccwpck_require__(1973);
+class Statistics {
+    constructor() {
+        this._logger = new logger_1.Logger();
+        this._processedIssuesCount = 0;
+        this._processedPullRequestsCount = 0;
+        this._staleIssuesCount = 0;
+        this._stalePullRequestsCount = 0;
+        this._undoStaleIssuesCount = 0;
+        this._undoStalePullRequestsCount = 0;
+        this._operationsCount = 0;
+        this._closedIssuesCount = 0;
+        this._closedPullRequestsCount = 0;
+        this._deletedIssuesLabelsCount = 0;
+        this._deletedPullRequestsLabelsCount = 0;
+        this._deletedCloseIssuesLabelsCount = 0;
+        this._deletedClosePullRequestsLabelsCount = 0;
+        this._deletedBranchesCount = 0;
+        this._addedIssuesLabelsCount = 0;
+        this._addedPullRequestsLabelsCount = 0;
+        this._addedIssuesCommentsCount = 0;
+        this._addedPullRequestsCommentsCount = 0;
+        this._fetchedItemsCount = 0;
+        this._fetchedItemsEventsCount = 0;
+        this._fetchedItemsCommentsCount = 0;
+        this._fetchedPullRequestsCount = 0;
+    }
+    incrementProcessedItemsCount(issue, increment = 1) {
+        if (issue.isPullRequest) {
+            return this._incrementProcessedPullRequestsCount(increment);
+        }
+        return this._incrementProcessedIssuesCount(increment);
+    }
+    incrementStaleItemsCount(issue, increment = 1) {
+        if (issue.isPullRequest) {
+            return this._incrementStalePullRequestsCount(increment);
+        }
+        return this._incrementStaleIssuesCount(increment);
+    }
+    incrementUndoStaleItemsCount(issue, increment = 1) {
+        if (issue.isPullRequest) {
+            return this._incrementUndoStalePullRequestsCount(increment);
+        }
+        return this._incrementUndoStaleIssuesCount(increment);
+    }
+    setOperationsCount(operationsCount) {
+        this._operationsCount = operationsCount;
+        return this;
+    }
+    incrementClosedItemsCount(issue, increment = 1) {
+        if (issue.isPullRequest) {
+            return this._incrementClosedPullRequestsCount(increment);
+        }
+        return this._incrementClosedIssuesCount(increment);
+    }
+    incrementDeletedItemsLabelsCount(issue, increment = 1) {
+        if (issue.isPullRequest) {
+            return this._incrementDeletedPullRequestsLabelsCount(increment);
+        }
+        return this._incrementDeletedIssuesLabelsCount(increment);
+    }
+    incrementDeletedCloseItemsLabelsCount(issue, increment = 1) {
+        if (issue.isPullRequest) {
+            return this._incrementDeletedClosePullRequestsLabelsCount(increment);
+        }
+        return this._incrementDeletedCloseIssuesLabelsCount(increment);
+    }
+    incrementDeletedBranchesCount(increment = 1) {
+        this._deletedBranchesCount += increment;
+        return this;
+    }
+    incrementAddedItemsLabel(issue, increment = 1) {
+        if (issue.isPullRequest) {
+            return this._incrementAddedPullRequestsLabel(increment);
+        }
+        return this._incrementAddedIssuesLabel(increment);
+    }
+    incrementAddedItemsComment(issue, increment = 1) {
+        if (issue.isPullRequest) {
+            return this._incrementAddedPullRequestsComment(increment);
+        }
+        return this._incrementAddedIssuesComment(increment);
+    }
+    incrementFetchedItemsCount(increment = 1) {
+        this._fetchedItemsCount += increment;
+        return this;
+    }
+    incrementFetchedItemsEventsCount(increment = 1) {
+        this._fetchedItemsEventsCount += increment;
+        return this;
+    }
+    incrementFetchedItemsCommentsCount(increment = 1) {
+        this._fetchedItemsCommentsCount += increment;
+        return this;
+    }
+    incrementFetchedPullRequestsCount(increment = 1) {
+        this._fetchedPullRequestsCount += increment;
+        return this;
+    }
+    logStats() {
+        this._logger.info(logger_service_1.LoggerService.yellow(logger_service_1.LoggerService.bold(`Statistics:`)));
+        this._logProcessedIssuesAndPullRequestsCount();
+        this._logStaleIssuesAndPullRequestsCount();
+        this._logUndoStaleIssuesAndPullRequestsCount();
+        this._logClosedIssuesAndPullRequestsCount();
+        this._logDeletedIssuesAndPullRequestsLabelsCount();
+        this._logDeletedCloseIssuesAndPullRequestsLabelsCount();
+        this._logDeletedBranchesCount();
+        this._logAddedIssuesAndPullRequestsLabelsCount();
+        this._logAddedIssuesAndPullRequestsCommentsCount();
+        this._logFetchedItemsCount();
+        this._logFetchedItemsEventsCount();
+        this._logFetchedItemsCommentsCount();
+        this._logFetchedPullRequestsCount();
+        this._logOperationsCount();
+        return this;
+    }
+    _incrementProcessedIssuesCount(increment = 1) {
+        this._processedIssuesCount += increment;
+        return this;
+    }
+    _incrementProcessedPullRequestsCount(increment = 1) {
+        this._processedPullRequestsCount += increment;
+        return this;
+    }
+    _incrementStaleIssuesCount(increment = 1) {
+        this._staleIssuesCount += increment;
+        return this;
+    }
+    _incrementStalePullRequestsCount(increment = 1) {
+        this._stalePullRequestsCount += increment;
+        return this;
+    }
+    _incrementUndoStaleIssuesCount(increment = 1) {
+        this._undoStaleIssuesCount += increment;
+        return this;
+    }
+    _incrementUndoStalePullRequestsCount(increment = 1) {
+        this._undoStalePullRequestsCount += increment;
+        return this;
+    }
+    _incrementClosedIssuesCount(increment = 1) {
+        this._closedIssuesCount += increment;
+        return this;
+    }
+    _incrementClosedPullRequestsCount(increment = 1) {
+        this._closedPullRequestsCount += increment;
+        return this;
+    }
+    _incrementDeletedIssuesLabelsCount(increment = 1) {
+        this._deletedIssuesLabelsCount += increment;
+        return this;
+    }
+    _incrementDeletedPullRequestsLabelsCount(increment = 1) {
+        this._deletedPullRequestsLabelsCount += increment;
+        return this;
+    }
+    _incrementDeletedCloseIssuesLabelsCount(increment = 1) {
+        this._deletedCloseIssuesLabelsCount += increment;
+        return this;
+    }
+    _incrementDeletedClosePullRequestsLabelsCount(increment = 1) {
+        this._deletedClosePullRequestsLabelsCount += increment;
+        return this;
+    }
+    _incrementAddedIssuesLabel(increment = 1) {
+        this._addedIssuesLabelsCount += increment;
+        return this;
+    }
+    _incrementAddedPullRequestsLabel(increment = 1) {
+        this._addedPullRequestsLabelsCount += increment;
+        return this;
+    }
+    _incrementAddedIssuesComment(increment = 1) {
+        this._addedIssuesCommentsCount += increment;
+        return this;
+    }
+    _incrementAddedPullRequestsComment(increment = 1) {
+        this._addedPullRequestsCommentsCount += increment;
+        return this;
+    }
+    _logProcessedIssuesAndPullRequestsCount() {
+        this._logGroup('Processed items', [
+            {
+                name: 'Processed issues',
+                count: this._processedIssuesCount
+            },
+            {
+                name: 'Processed PRs',
+                count: this._processedPullRequestsCount
+            }
+        ]);
+    }
+    _logStaleIssuesAndPullRequestsCount() {
+        this._logGroup('New stale items', [
+            {
+                name: 'New stale issues',
+                count: this._staleIssuesCount
+            },
+            {
+                name: 'New stale PRs',
+                count: this._stalePullRequestsCount
+            }
+        ]);
+    }
+    _logUndoStaleIssuesAndPullRequestsCount() {
+        this._logGroup('No longer stale items', [
+            {
+                name: 'No longer stale issues',
+                count: this._undoStaleIssuesCount
+            },
+            {
+                name: 'No longer stale PRs',
+                count: this._undoStalePullRequestsCount
+            }
+        ]);
+    }
+    _logClosedIssuesAndPullRequestsCount() {
+        this._logGroup('Closed items', [
+            {
+                name: 'Closed issues',
+                count: this._closedIssuesCount
+            },
+            {
+                name: 'Closed PRs',
+                count: this._closedPullRequestsCount
+            }
+        ]);
+    }
+    _logDeletedIssuesAndPullRequestsLabelsCount() {
+        this._logGroup('Deleted items labels', [
+            {
+                name: 'Deleted issues labels',
+                count: this._deletedIssuesLabelsCount
+            },
+            {
+                name: 'Deleted PRs labels',
+                count: this._deletedPullRequestsLabelsCount
+            }
+        ]);
+    }
+    _logDeletedCloseIssuesAndPullRequestsLabelsCount() {
+        this._logGroup('Deleted close items labels', [
+            {
+                name: 'Deleted close issues labels',
+                count: this._deletedCloseIssuesLabelsCount
+            },
+            {
+                name: 'Deleted close PRs labels',
+                count: this._deletedClosePullRequestsLabelsCount
+            }
+        ]);
+    }
+    _logDeletedBranchesCount() {
+        this._logCount('Deleted branches', this._deletedBranchesCount);
+    }
+    _logAddedIssuesAndPullRequestsLabelsCount() {
+        this._logGroup('Added items labels', [
+            {
+                name: 'Added issues labels',
+                count: this._addedIssuesLabelsCount
+            },
+            {
+                name: 'Added PRs labels',
+                count: this._addedPullRequestsLabelsCount
+            }
+        ]);
+    }
+    _logAddedIssuesAndPullRequestsCommentsCount() {
+        this._logGroup('Added items comments', [
+            {
+                name: 'Added issues comments',
+                count: this._addedIssuesCommentsCount
+            },
+            {
+                name: 'Added PRs comments',
+                count: this._addedPullRequestsCommentsCount
+            }
+        ]);
+    }
+    _logFetchedItemsCount() {
+        this._logCount('Fetched items', this._fetchedItemsCount);
+    }
+    _logFetchedItemsEventsCount() {
+        this._logCount('Fetched items events', this._fetchedItemsEventsCount);
+    }
+    _logFetchedItemsCommentsCount() {
+        this._logCount('Fetched items comments', this._fetchedItemsCommentsCount);
+    }
+    _logFetchedPullRequestsCount() {
+        this._logCount('Fetched pull requests', this._fetchedPullRequestsCount);
+    }
+    _logOperationsCount() {
+        this._logCount('Operations performed', this._operationsCount);
+    }
+    _logCount(name, count) {
+        if (count > 0) {
+            this._logger.info(`${name}:`, logger_service_1.LoggerService.cyan(count));
+        }
+    }
+    _logGroup(groupName, values) {
+        if (this._isGroupValuesPartiallySet(values)) {
+            this._logCount(groupName, this._getGroupValuesTotalCount(values));
+            this._logGroupValues(values);
+        }
+        else {
+            // Only one value will be display
+            for (const value of values) {
+                this._logCount(value.name, value.count);
+            }
+        }
+    }
+    /**
+     * @private
+     * @description
+     * If there is a least two elements with a valid count then it's partially set
+     * Useful to defined if we should display the values as a group or not
+     *
+     * @param {IGroupValue[]} values The list of group values to check
+     */
+    _isGroupValuesPartiallySet(values) {
+        return (values
+            .map((value) => {
+            return value.count > 0;
+        })
+            .filter((isSet) => isSet).length >= 2);
+    }
+    _getGroupValuesTotalCount(values) {
+        return values.reduce((count, value) => {
+            return count + value.count;
+        }, 0);
+    }
+    _getAllGroupValuesSet(values) {
+        return values.filter((value) => {
+            return value.count > 0;
+        });
+    }
+    _logGroupValues(values) {
+        const onlyValuesSet = this._getAllGroupValuesSet(values);
+        const longestValue = this._getLongestGroupValue(onlyValuesSet);
+        for (const [index, value] of onlyValuesSet.entries()) {
+            const prefix = index === onlyValuesSet.length - 1 ? '└──' : '├──';
+            this._logCount(`${logger_service_1.LoggerService.white(prefix)} ${value.name.padEnd(longestValue, ' ')}`, value.count);
+        }
+    }
+    _getLongestGroupValue(values) {
+        return values.reduce((longestValue, value) => {
+            return value.name.length > longestValue
+                ? value.name.length
+                : longestValue;
+        }, 0);
+    }
+}
+exports.Statistics = Statistics;
+
+
+/***/ }),
+
+/***/ 5931:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Option = void 0;
+var Option;
+(function (Option) {
+    Option["RepoToken"] = "repo-token";
+    Option["StaleIssueMessage"] = "stale-issue-message";
+    Option["StalePrMessage"] = "stale-pr-message";
+    Option["CloseIssueMessage"] = "close-issue-message";
+    Option["ClosePrMessage"] = "close-pr-message";
+    Option["DaysBeforeStale"] = "days-before-stale";
+    Option["DaysBeforeIssueStale"] = "days-before-issue-stale";
+    Option["DaysBeforePrStale"] = "days-before-pr-stale";
+    Option["DaysBeforeClose"] = "days-before-close";
+    Option["DaysBeforeIssueClose"] = "days-before-issue-close";
+    Option["DaysBeforePrClose"] = "days-before-pr-close";
+    Option["StaleIssueLabel"] = "stale-issue-label";
+    Option["CloseIssueLabel"] = "close-issue-label";
+    Option["ExemptIssueLabels"] = "exempt-issue-labels";
+    Option["StalePrLabel"] = "stale-pr-label";
+    Option["ClosePrLabel"] = "close-pr-label";
+    Option["ExemptPrLabels"] = "exempt-pr-labels";
+    Option["OnlyLabels"] = "only-labels";
+    Option["OnlyIssueLabels"] = "only-issue-labels";
+    Option["OnlyPrLabels"] = "only-pr-labels";
+    Option["AnyOfLabels"] = "any-of-labels";
+    Option["OperationsPerRun"] = "operations-per-run";
+    Option["RemoveStaleWhenUpdated"] = "remove-stale-when-updated";
+    Option["RemoveIssueStaleWhenUpdated"] = "remove-issue-stale-when-updated";
+    Option["RemovePrStaleWhenUpdated"] = "remove-pr-stale-when-updated";
+    Option["DebugOnly"] = "debug-only";
+    Option["Ascending"] = "ascending";
+    Option["DeleteBranch"] = "delete-branch";
+    Option["StartDate"] = "start-date";
+    Option["ExemptMilestones"] = "exempt-milestones";
+    Option["ExemptIssueMilestones"] = "exempt-issue-milestones";
+    Option["ExemptPrMilestones"] = "exempt-pr-milestones";
+    Option["ExemptAllMilestones"] = "exempt-all-milestones";
+    Option["ExemptAllIssueMilestones"] = "exempt-all-issue-milestones";
+    Option["ExemptAllPrMilestones"] = "exempt-all-pr-milestones";
+    Option["ExemptAssignees"] = "exempt-assignees";
+    Option["ExemptIssueAssignees"] = "exempt-issue-assignees";
+    Option["ExemptPrAssignees"] = "exempt-pr-assignees";
+    Option["ExemptAllAssignees"] = "exempt-all-assignees";
+    Option["ExemptAllIssueAssignees"] = "exempt-all-issue-assignees";
+    Option["ExemptAllPrAssignees"] = "exempt-all-pr-assignees";
+    Option["EnableStatistics"] = "enable-statistics";
+    Option["LabelsToRemoveWhenUnstale"] = "labels-to-remove-when-unstale";
+    Option["LabelsToAddWhenUnstale"] = "labels-to-add-when-unstale";
+})(Option = exports.Option || (exports.Option = {}));
+
+
+/***/ }),
+
+/***/ 7752:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.cleanLabel = void 0;
+const lodash_deburr_1 = __importDefault(__nccwpck_require__(1601));
+/**
+ * @description
+ * Clean a label by lowercasing it and deburring it for consistency
+ *
+ * @param {string} label A raw GitHub label
+ *
+ * @return {string} A lowercased, deburred version of the passed in label
+ */
+function cleanLabel(label) {
+    return lodash_deburr_1.default(label.toLowerCase());
+}
+exports.cleanLabel = cleanLabel;
+
+
+/***/ }),
+
+/***/ 965:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getHumanizedDate = void 0;
+function getHumanizedDate(date) {
+    const year = date.getFullYear();
+    let month = `${date.getMonth() + 1}`;
+    let day = `${date.getDate()}`;
+    if (month.length < 2) {
+        month = `0${month}`;
+    }
+    if (day.length < 2) {
+        day = `0${day}`;
+    }
+    return [day, month, year].join('-');
+}
+exports.getHumanizedDate = getHumanizedDate;
+
+
+/***/ }),
+
+/***/ 1473:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isDateMoreRecentThan = void 0;
+function isDateMoreRecentThan(date, comparedDate) {
+    return date > comparedDate;
+}
+exports.isDateMoreRecentThan = isDateMoreRecentThan;
+
+
+/***/ }),
+
+/***/ 891:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isValidDate = void 0;
+/**
+ * @description
+ * Check if a date is valid
+ *
+ * @see
+ * https://stackoverflow.com/a/1353711/4440414
+ *
+ * @param {Readonly<Date>} date The date to check
+ *
+ * @returns {boolean} true when the given date is valid
+ */
+function isValidDate(date) {
+    if (Object.prototype.toString.call(date) === '[object Date]') {
+        return !isNaN(date.getTime());
+    }
+    return false;
+}
+exports.isValidDate = isValidDate;
+
+
+/***/ }),
+
+/***/ 8236:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isBoolean = void 0;
+function isBoolean(value) {
+    return value === true || value === false;
+}
+exports.isBoolean = isBoolean;
+
+
+/***/ }),
+
+/***/ 6792:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isLabeled = void 0;
+const clean_label_1 = __nccwpck_require__(7752);
+/**
+ * @description
+ * Check if the given label is listed as a label of the given issue
+ *
+ * @param {Readonly<Issue>} issue A GitHub issue containing some labels
+ * @param {Readonly<string>} label The label to check the presence with
+ *
+ * @return {boolean} Return true when the given label is also in the given issue labels
+ */
+function isLabeled(issue, label) {
+    return !!issue.labels.find((issueLabel) => {
+        return clean_label_1.cleanLabel(label) === clean_label_1.cleanLabel(issueLabel.name);
+    });
+}
+exports.isLabeled = isLabeled;
+
+
+/***/ }),
+
+/***/ 5400:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isPullRequest = void 0;
+function isPullRequest(issue) {
+    return !!issue.pull_request;
+}
+exports.isPullRequest = isPullRequest;
+
+
+/***/ }),
+
+/***/ 2461:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.shouldMarkWhenStale = void 0;
+function shouldMarkWhenStale(daysBeforeStale) {
+    return daysBeforeStale >= 0;
+}
+exports.shouldMarkWhenStale = shouldMarkWhenStale;
+
+
+/***/ }),
+
+/***/ 1883:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.wordsToList = void 0;
+/**
+ * @description
+ * Transform a string of comma separated words
+ * to an array of words
+ *
+ * @example
+ * wordsToList('label') => ['label']
+ * wordsToList('label,label') => ['label', 'label']
+ * wordsToList('kebab-label') => ['kebab-label']
+ * wordsToList('kebab%20label') => ['kebab%20label']
+ * wordsToList('label with words') => ['label with words']
+ *
+ * @param {Readonly<string>} words A string of comma separated words
+ *
+ * @return {string[]} A list of words
+ */
+function wordsToList(words) {
+    if (!words.length) {
+        return [];
+    }
+    return words.split(',').map((word) => word.trim());
+}
+exports.wordsToList = wordsToList;
+
+
+/***/ }),
+
+/***/ 3109:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const issues_processor_1 = __nccwpck_require__(3292);
+const is_valid_date_1 = __nccwpck_require__(891);
+function _run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const args = _getAndValidateArgs();
+            const issueProcessor = new issues_processor_1.IssuesProcessor(args);
+            yield issueProcessor.processIssues();
+            yield processOutput(issueProcessor.staleIssues, issueProcessor.closedIssues);
+        }
+        catch (error) {
+            core.error(error);
+            core.setFailed(error.message);
+        }
+    });
+}
+function _getAndValidateArgs() {
+    const args = {
+        repoToken: core.getInput('repo-token'),
+        staleIssueMessage: core.getInput('stale-issue-message'),
+        stalePrMessage: core.getInput('stale-pr-message'),
+        closeIssueMessage: core.getInput('close-issue-message'),
+        closePrMessage: core.getInput('close-pr-message'),
+        daysBeforeStale: parseInt(core.getInput('days-before-stale', { required: true })),
+        daysBeforeIssueStale: parseInt(core.getInput('days-before-issue-stale')),
+        daysBeforePrStale: parseInt(core.getInput('days-before-pr-stale')),
+        daysBeforeClose: parseInt(core.getInput('days-before-close', { required: true })),
+        daysBeforeIssueClose: parseInt(core.getInput('days-before-issue-close')),
+        daysBeforePrClose: parseInt(core.getInput('days-before-pr-close')),
+        staleIssueLabel: core.getInput('stale-issue-label', { required: true }),
+        closeIssueLabel: core.getInput('close-issue-label'),
+        exemptIssueLabels: core.getInput('exempt-issue-labels'),
+        stalePrLabel: core.getInput('stale-pr-label', { required: true }),
+        closePrLabel: core.getInput('close-pr-label'),
+        exemptPrLabels: core.getInput('exempt-pr-labels'),
+        onlyLabels: core.getInput('only-labels'),
+        onlyIssueLabels: core.getInput('only-issue-labels'),
+        onlyPrLabels: core.getInput('only-pr-labels'),
+        anyOfLabels: core.getInput('any-of-labels'),
+        anyOfIssueLabels: core.getInput('any-of-issue-labels'),
+        anyOfPrLabels: core.getInput('any-of-pr-labels'),
+        operationsPerRun: parseInt(core.getInput('operations-per-run', { required: true })),
+        removeStaleWhenUpdated: !(core.getInput('remove-stale-when-updated') === 'false'),
+        removeIssueStaleWhenUpdated: _toOptionalBoolean(core.getInput('remove-issue-stale-when-updated')),
+        removePrStaleWhenUpdated: _toOptionalBoolean(core.getInput('remove-pr-stale-when-updated')),
+        debugOnly: core.getInput('debug-only') === 'true',
+        ascending: core.getInput('ascending') === 'true',
+        deleteBranch: core.getInput('delete-branch') === 'true',
+        startDate: core.getInput('start-date') !== ''
+            ? core.getInput('start-date')
+            : undefined,
+        exemptMilestones: core.getInput('exempt-milestones'),
+        exemptIssueMilestones: core.getInput('exempt-issue-milestones'),
+        exemptPrMilestones: core.getInput('exempt-pr-milestones'),
+        exemptAllMilestones: core.getInput('exempt-all-milestones') === 'true',
+        exemptAllIssueMilestones: _toOptionalBoolean('exempt-all-issue-milestones'),
+        exemptAllPrMilestones: _toOptionalBoolean('exempt-all-pr-milestones'),
+        exemptAssignees: core.getInput('exempt-assignees'),
+        exemptIssueAssignees: core.getInput('exempt-issue-assignees'),
+        exemptPrAssignees: core.getInput('exempt-pr-assignees'),
+        exemptAllAssignees: core.getInput('exempt-all-assignees') === 'true',
+        exemptAllIssueAssignees: _toOptionalBoolean('exempt-all-issue-assignees'),
+        exemptAllPrAssignees: _toOptionalBoolean('exempt-all-pr-assignees'),
+        enableStatistics: core.getInput('enable-statistics') === 'true',
+        labelsToRemoveWhenUnstale: core.getInput('labels-to-remove-when-unstale'),
+        labelsToAddWhenUnstale: core.getInput('labels-to-add-when-unstale')
+    };
+    for (const numberInput of [
+        'days-before-stale',
+        'days-before-close',
+        'operations-per-run'
+    ]) {
+        if (isNaN(parseInt(core.getInput(numberInput)))) {
+            const errorMessage = `Option "${numberInput}" did not parse to a valid integer`;
+            core.setFailed(errorMessage);
+            throw new Error(errorMessage);
+        }
+    }
+    for (const optionalDateInput of ['start-date']) {
+        // Ignore empty dates because it is considered as the right type for a default value (so a valid one)
+        if (core.getInput(optionalDateInput) !== '') {
+            if (!is_valid_date_1.isValidDate(new Date(core.getInput(optionalDateInput)))) {
+                const errorMessage = `Option "${optionalDateInput}" did not parse to a valid date`;
+                core.setFailed(errorMessage);
+                throw new Error(errorMessage);
+            }
+        }
+    }
+    return args;
+}
+function processOutput(staledIssues, closedIssues) {
+    return __awaiter(this, void 0, void 0, function* () {
+        core.setOutput('staled-issues-prs', JSON.stringify(staledIssues));
+        core.setOutput('closed-issues-prs', JSON.stringify(closedIssues));
+    });
+}
+function _toOptionalBoolean(argumentName) {
+    const argument = core.getInput(argumentName);
+    if (argument === 'true') {
+        return true;
+    }
+    else if (argument === 'false') {
+        return false;
+    }
+    return undefined;
+}
+void _run();
+
+
+/***/ }),
+
+/***/ 1973:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LoggerService = void 0;
+const ansi_styles_1 = __importDefault(__nccwpck_require__(2068));
+class LoggerService {
+    static whiteBright(message) {
+        return this._format(message, 'whiteBright');
+    }
+    static yellowBright(message) {
+        return this._format(message, 'yellowBright');
+    }
+    static magenta(message) {
+        return this._format(message, 'magenta');
+    }
+    static cyan(message) {
+        return this._format(message, 'cyan');
+    }
+    static yellow(message) {
+        return this._format(message, 'yellow');
+    }
+    static white(message) {
+        return this._format(message, 'white');
+    }
+    static green(message) {
+        return this._format(message, 'green');
+    }
+    static red(message) {
+        return this._format(message, 'red');
+    }
+    static blue(message) {
+        return this._format(message, 'blue');
+    }
+    static bold(message) {
+        return this._format(message, 'bold');
+    }
+    static _format(message, style) {
+        return `${ansi_styles_1.default[style].open}${message}${ansi_styles_1.default[style].close}`;
+    }
+}
+exports.LoggerService = LoggerService;
+
+
+/***/ }),
+
+/***/ 7351:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const os = __importStar(__nccwpck_require__(2087));
+const utils_1 = __nccwpck_require__(5278);
+/**
+ * Commands
+ *
+ * Command Format:
+ *   ::name key=value,key=value::message
+ *
+ * Examples:
+ *   ::warning::This is the message
+ *   ::set-env name=MY_VAR::some value
+ */
+function issueCommand(command, properties, message) {
+    const cmd = new Command(command, properties, message);
+    process.stdout.write(cmd.toString() + os.EOL);
+}
+exports.issueCommand = issueCommand;
+function issue(name, message = '') {
+    issueCommand(name, {}, message);
+}
+exports.issue = issue;
+const CMD_STRING = '::';
+class Command {
+    constructor(command, properties, message) {
+        if (!command) {
+            command = 'missing.command';
+        }
+        this.command = command;
+        this.properties = properties;
+        this.message = message;
+    }
+    toString() {
+        let cmdStr = CMD_STRING + this.command;
+        if (this.properties && Object.keys(this.properties).length > 0) {
+            cmdStr += ' ';
+            let first = true;
+            for (const key in this.properties) {
+                if (this.properties.hasOwnProperty(key)) {
+                    const val = this.properties[key];
+                    if (val) {
+                        if (first) {
+                            first = false;
+                        }
+                        else {
+                            cmdStr += ',';
+                        }
+                        cmdStr += `${key}=${escapeProperty(val)}`;
+                    }
+                }
+            }
+        }
+        cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
+        return cmdStr;
+    }
+}
+function escapeData(s) {
+    return utils_1.toCommandValue(s)
+        .replace(/%/g, '%25')
+        .replace(/\r/g, '%0D')
+        .replace(/\n/g, '%0A');
+}
+function escapeProperty(s) {
+    return utils_1.toCommandValue(s)
+        .replace(/%/g, '%25')
+        .replace(/\r/g, '%0D')
+        .replace(/\n/g, '%0A')
+        .replace(/:/g, '%3A')
+        .replace(/,/g, '%2C');
+}
+//# sourceMappingURL=command.js.map
+
+/***/ }),
+
+/***/ 2186:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const command_1 = __nccwpck_require__(7351);
+const file_command_1 = __nccwpck_require__(717);
+const utils_1 = __nccwpck_require__(5278);
+const os = __importStar(__nccwpck_require__(2087));
+const path = __importStar(__nccwpck_require__(5622));
+/**
+ * The code to exit an action
+ */
+var ExitCode;
+(function (ExitCode) {
+    /**
+     * A code indicating that the action was successful
+     */
+    ExitCode[ExitCode["Success"] = 0] = "Success";
+    /**
+     * A code indicating that the action was a failure
+     */
+    ExitCode[ExitCode["Failure"] = 1] = "Failure";
+})(ExitCode = exports.ExitCode || (exports.ExitCode = {}));
+//-----------------------------------------------------------------------
+// Variables
+//-----------------------------------------------------------------------
+/**
+ * Sets env variable for this action and future actions in the job
+ * @param name the name of the variable to set
+ * @param val the value of the variable. Non-string values will be converted to a string via JSON.stringify
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function exportVariable(name, val) {
+    const convertedVal = utils_1.toCommandValue(val);
+    process.env[name] = convertedVal;
+    const filePath = process.env['GITHUB_ENV'] || '';
+    if (filePath) {
+        const delimiter = '_GitHubActionsFileCommandDelimeter_';
+        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
+        file_command_1.issueCommand('ENV', commandValue);
+    }
+    else {
+        command_1.issueCommand('set-env', { name }, convertedVal);
+    }
+}
+exports.exportVariable = exportVariable;
+/**
+ * Registers a secret which will get masked from logs
+ * @param secret value of the secret
+ */
+function setSecret(secret) {
+    command_1.issueCommand('add-mask', {}, secret);
+}
+exports.setSecret = setSecret;
+/**
+ * Prepends inputPath to the PATH (for this action and future actions)
+ * @param inputPath
+ */
+function addPath(inputPath) {
+    const filePath = process.env['GITHUB_PATH'] || '';
+    if (filePath) {
+        file_command_1.issueCommand('PATH', inputPath);
+    }
+    else {
+        command_1.issueCommand('add-path', {}, inputPath);
+    }
+    process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
+}
+exports.addPath = addPath;
+/**
+ * Gets the value of an input.  The value is also trimmed.
+ *
+ * @param     name     name of the input to get
+ * @param     options  optional. See InputOptions.
+ * @returns   string
+ */
+function getInput(name, options) {
+    const val = process.env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`] || '';
+    if (options && options.required && !val) {
+        throw new Error(`Input required and not supplied: ${name}`);
+    }
+    return val.trim();
+}
+exports.getInput = getInput;
+/**
+ * Sets the value of an output.
+ *
+ * @param     name     name of the output to set
+ * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function setOutput(name, value) {
+    command_1.issueCommand('set-output', { name }, value);
+}
+exports.setOutput = setOutput;
+/**
+ * Enables or disables the echoing of commands into stdout for the rest of the step.
+ * Echoing is disabled by default if ACTIONS_STEP_DEBUG is not set.
+ *
+ */
+function setCommandEcho(enabled) {
+    command_1.issue('echo', enabled ? 'on' : 'off');
+}
+exports.setCommandEcho = setCommandEcho;
+//-----------------------------------------------------------------------
+// Results
+//-----------------------------------------------------------------------
+/**
+ * Sets the action status to failed.
+ * When the action exits it will be with an exit code of 1
+ * @param message add error issue message
+ */
+function setFailed(message) {
+    process.exitCode = ExitCode.Failure;
+    error(message);
+}
+exports.setFailed = setFailed;
+//-----------------------------------------------------------------------
+// Logging Commands
+//-----------------------------------------------------------------------
+/**
+ * Gets whether Actions Step Debug is on or not
+ */
+function isDebug() {
+    return process.env['RUNNER_DEBUG'] === '1';
+}
+exports.isDebug = isDebug;
+/**
+ * Writes debug message to user log
+ * @param message debug message
+ */
+function debug(message) {
+    command_1.issueCommand('debug', {}, message);
+}
+exports.debug = debug;
+/**
+ * Adds an error issue
+ * @param message error issue message. Errors will be converted to string via toString()
+ */
+function error(message) {
+    command_1.issue('error', message instanceof Error ? message.toString() : message);
+}
+exports.error = error;
+/**
+ * Adds an warning issue
+ * @param message warning issue message. Errors will be converted to string via toString()
+ */
+function warning(message) {
+    command_1.issue('warning', message instanceof Error ? message.toString() : message);
+}
+exports.warning = warning;
+/**
+ * Writes info to log with console.log.
+ * @param message info message
+ */
+function info(message) {
+    process.stdout.write(message + os.EOL);
+}
+exports.info = info;
+/**
+ * Begin an output group.
+ *
+ * Output until the next `groupEnd` will be foldable in this group
+ *
+ * @param name The name of the output group
+ */
+function startGroup(name) {
+    command_1.issue('group', name);
+}
+exports.startGroup = startGroup;
+/**
+ * End an output group.
+ */
+function endGroup() {
+    command_1.issue('endgroup');
+}
+exports.endGroup = endGroup;
+/**
+ * Wrap an asynchronous function call in a group.
+ *
+ * Returns the same type as the function itself.
+ *
+ * @param name The name of the group
+ * @param fn The function to wrap in the group
+ */
+function group(name, fn) {
+    return __awaiter(this, void 0, void 0, function* () {
+        startGroup(name);
+        let result;
+        try {
+            result = yield fn();
+        }
+        finally {
+            endGroup();
+        }
+        return result;
+    });
+}
+exports.group = group;
+//-----------------------------------------------------------------------
+// Wrapper action state
+//-----------------------------------------------------------------------
+/**
+ * Saves state for current action, the state can only be retrieved by this action's post job execution.
+ *
+ * @param     name     name of the state to store
+ * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function saveState(name, value) {
+    command_1.issueCommand('save-state', { name }, value);
+}
+exports.saveState = saveState;
+/**
+ * Gets the value of an state set by this action's main execution.
+ *
+ * @param     name     name of the state to get
+ * @returns   string
+ */
+function getState(name) {
+    return process.env[`STATE_${name}`] || '';
+}
+exports.getState = getState;
+//# sourceMappingURL=core.js.map
+
+/***/ }),
+
+/***/ 717:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+// For internal use, subject to change.
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fs = __importStar(__nccwpck_require__(5747));
+const os = __importStar(__nccwpck_require__(2087));
+const utils_1 = __nccwpck_require__(5278);
+function issueCommand(command, message) {
+    const filePath = process.env[`GITHUB_${command}`];
+    if (!filePath) {
+        throw new Error(`Unable to find environment variable for file command ${command}`);
+    }
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`Missing file at path: ${filePath}`);
+    }
+    fs.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+        encoding: 'utf8'
+    });
+}
+exports.issueCommand = issueCommand;
+//# sourceMappingURL=file-command.js.map
+
+/***/ }),
+
+/***/ 5278:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/**
+ * Sanitizes an input into a string so it can be passed into issueCommand safely
+ * @param input input to sanitize into a string
+ */
+function toCommandValue(input) {
+    if (input === null || input === undefined) {
+        return '';
+    }
+    else if (typeof input === 'string' || input instanceof String) {
+        return input;
+    }
+    return JSON.stringify(input);
+}
+exports.toCommandValue = toCommandValue;
+//# sourceMappingURL=utils.js.map
+
+/***/ }),
+
+/***/ 4087:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Context = void 0;
+const fs_1 = __nccwpck_require__(5747);
+const os_1 = __nccwpck_require__(2087);
+class Context {
+    /**
+     * Hydrate the context from the environment
+     */
+    constructor() {
+        this.payload = {};
+        if (process.env.GITHUB_EVENT_PATH) {
+            if (fs_1.existsSync(process.env.GITHUB_EVENT_PATH)) {
+                this.payload = JSON.parse(fs_1.readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: 'utf8' }));
+            }
+            else {
+                const path = process.env.GITHUB_EVENT_PATH;
+                process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${os_1.EOL}`);
+            }
+        }
+        this.eventName = process.env.GITHUB_EVENT_NAME;
+        this.sha = process.env.GITHUB_SHA;
+        this.ref = process.env.GITHUB_REF;
+        this.workflow = process.env.GITHUB_WORKFLOW;
+        this.action = process.env.GITHUB_ACTION;
+        this.actor = process.env.GITHUB_ACTOR;
+        this.job = process.env.GITHUB_JOB;
+        this.runNumber = parseInt(process.env.GITHUB_RUN_NUMBER, 10);
+        this.runId = parseInt(process.env.GITHUB_RUN_ID, 10);
+    }
+    get issue() {
+        const payload = this.payload;
+        return Object.assign(Object.assign({}, this.repo), { number: (payload.issue || payload.pull_request || payload).number });
+    }
+    get repo() {
+        if (process.env.GITHUB_REPOSITORY) {
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+            return { owner, repo };
+        }
+        if (this.payload.repository) {
+            return {
+                owner: this.payload.repository.owner.login,
+                repo: this.payload.repository.name
+            };
+        }
+        throw new Error("context.repo requires a GITHUB_REPOSITORY environment variable like 'owner/repo'");
+    }
+}
+exports.Context = Context;
+//# sourceMappingURL=context.js.map
+
+/***/ }),
+
+/***/ 5438:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -80,14 +2606,107 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-Object.defineProperty(exports, "__esModule", { value: true });
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getOctokit = exports.context = void 0;
+const Context = __importStar(__nccwpck_require__(4087));
+const utils_1 = __nccwpck_require__(3030);
+exports.context = new Context.Context();
+/**
+ * Returns a hydrated octokit ready to use for GitHub Actions
+ *
+ * @param     token    the repo PAT or GITHUB_TOKEN
+ * @param     options  other options to set
+ */
+function getOctokit(token, options) {
+    return new utils_1.GitHub(utils_1.getOctokitOptions(token, options));
+}
+exports.getOctokit = getOctokit;
+//# sourceMappingURL=github.js.map
+
+/***/ }),
+
+/***/ 7914:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getApiBaseUrl = exports.getProxyAgent = exports.getAuthString = void 0;
+const httpClient = __importStar(__nccwpck_require__(9925));
+function getAuthString(token, options) {
+    if (!token && !options.auth) {
+        throw new Error('Parameter token or opts.auth is required');
+    }
+    else if (token && options.auth) {
+        throw new Error('Parameters token and opts.auth may not both be specified');
+    }
+    return typeof options.auth === 'string' ? options.auth : `token ${token}`;
+}
+exports.getAuthString = getAuthString;
+function getProxyAgent(destinationUrl) {
+    const hc = new httpClient.HttpClient();
+    return hc.getAgent(destinationUrl);
+}
+exports.getProxyAgent = getProxyAgent;
+function getApiBaseUrl() {
+    return process.env['GITHUB_API_URL'] || 'https://api.github.com';
+}
+exports.getApiBaseUrl = getApiBaseUrl;
+//# sourceMappingURL=utils.js.map
+
+/***/ }),
+
+/***/ 3030:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getOctokitOptions = exports.GitHub = exports.context = void 0;
-const Context = __importStar(__webpack_require__(53));
-const Utils = __importStar(__webpack_require__(914));
+const Context = __importStar(__nccwpck_require__(4087));
+const Utils = __importStar(__nccwpck_require__(7914));
 // octokit + plugins
-const core_1 = __webpack_require__(762);
-const plugin_rest_endpoint_methods_1 = __webpack_require__(44);
-const plugin_paginate_rest_1 = __webpack_require__(193);
+const core_1 = __nccwpck_require__(6762);
+const plugin_rest_endpoint_methods_1 = __nccwpck_require__(3044);
+const plugin_paginate_rest_1 = __nccwpck_require__(4193);
 exports.context = new Context.Context();
 const baseUrl = Utils.getApiBaseUrl();
 const defaults = {
@@ -117,13 +2736,1477 @@ exports.getOctokitOptions = getOctokitOptions;
 
 /***/ }),
 
-/***/ 44:
-/***/ (function(__unusedmodule, exports) {
+/***/ 9925:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const url = __nccwpck_require__(8835);
+const http = __nccwpck_require__(8605);
+const https = __nccwpck_require__(7211);
+const pm = __nccwpck_require__(6443);
+let tunnel;
+var HttpCodes;
+(function (HttpCodes) {
+    HttpCodes[HttpCodes["OK"] = 200] = "OK";
+    HttpCodes[HttpCodes["MultipleChoices"] = 300] = "MultipleChoices";
+    HttpCodes[HttpCodes["MovedPermanently"] = 301] = "MovedPermanently";
+    HttpCodes[HttpCodes["ResourceMoved"] = 302] = "ResourceMoved";
+    HttpCodes[HttpCodes["SeeOther"] = 303] = "SeeOther";
+    HttpCodes[HttpCodes["NotModified"] = 304] = "NotModified";
+    HttpCodes[HttpCodes["UseProxy"] = 305] = "UseProxy";
+    HttpCodes[HttpCodes["SwitchProxy"] = 306] = "SwitchProxy";
+    HttpCodes[HttpCodes["TemporaryRedirect"] = 307] = "TemporaryRedirect";
+    HttpCodes[HttpCodes["PermanentRedirect"] = 308] = "PermanentRedirect";
+    HttpCodes[HttpCodes["BadRequest"] = 400] = "BadRequest";
+    HttpCodes[HttpCodes["Unauthorized"] = 401] = "Unauthorized";
+    HttpCodes[HttpCodes["PaymentRequired"] = 402] = "PaymentRequired";
+    HttpCodes[HttpCodes["Forbidden"] = 403] = "Forbidden";
+    HttpCodes[HttpCodes["NotFound"] = 404] = "NotFound";
+    HttpCodes[HttpCodes["MethodNotAllowed"] = 405] = "MethodNotAllowed";
+    HttpCodes[HttpCodes["NotAcceptable"] = 406] = "NotAcceptable";
+    HttpCodes[HttpCodes["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
+    HttpCodes[HttpCodes["RequestTimeout"] = 408] = "RequestTimeout";
+    HttpCodes[HttpCodes["Conflict"] = 409] = "Conflict";
+    HttpCodes[HttpCodes["Gone"] = 410] = "Gone";
+    HttpCodes[HttpCodes["TooManyRequests"] = 429] = "TooManyRequests";
+    HttpCodes[HttpCodes["InternalServerError"] = 500] = "InternalServerError";
+    HttpCodes[HttpCodes["NotImplemented"] = 501] = "NotImplemented";
+    HttpCodes[HttpCodes["BadGateway"] = 502] = "BadGateway";
+    HttpCodes[HttpCodes["ServiceUnavailable"] = 503] = "ServiceUnavailable";
+    HttpCodes[HttpCodes["GatewayTimeout"] = 504] = "GatewayTimeout";
+})(HttpCodes = exports.HttpCodes || (exports.HttpCodes = {}));
+var Headers;
+(function (Headers) {
+    Headers["Accept"] = "accept";
+    Headers["ContentType"] = "content-type";
+})(Headers = exports.Headers || (exports.Headers = {}));
+var MediaTypes;
+(function (MediaTypes) {
+    MediaTypes["ApplicationJson"] = "application/json";
+})(MediaTypes = exports.MediaTypes || (exports.MediaTypes = {}));
+/**
+ * Returns the proxy URL, depending upon the supplied url and proxy environment variables.
+ * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
+ */
+function getProxyUrl(serverUrl) {
+    let proxyUrl = pm.getProxyUrl(url.parse(serverUrl));
+    return proxyUrl ? proxyUrl.href : '';
+}
+exports.getProxyUrl = getProxyUrl;
+const HttpRedirectCodes = [
+    HttpCodes.MovedPermanently,
+    HttpCodes.ResourceMoved,
+    HttpCodes.SeeOther,
+    HttpCodes.TemporaryRedirect,
+    HttpCodes.PermanentRedirect
+];
+const HttpResponseRetryCodes = [
+    HttpCodes.BadGateway,
+    HttpCodes.ServiceUnavailable,
+    HttpCodes.GatewayTimeout
+];
+const RetryableHttpVerbs = ['OPTIONS', 'GET', 'DELETE', 'HEAD'];
+const ExponentialBackoffCeiling = 10;
+const ExponentialBackoffTimeSlice = 5;
+class HttpClientResponse {
+    constructor(message) {
+        this.message = message;
+    }
+    readBody() {
+        return new Promise(async (resolve, reject) => {
+            let output = Buffer.alloc(0);
+            this.message.on('data', (chunk) => {
+                output = Buffer.concat([output, chunk]);
+            });
+            this.message.on('end', () => {
+                resolve(output.toString());
+            });
+        });
+    }
+}
+exports.HttpClientResponse = HttpClientResponse;
+function isHttps(requestUrl) {
+    let parsedUrl = url.parse(requestUrl);
+    return parsedUrl.protocol === 'https:';
+}
+exports.isHttps = isHttps;
+class HttpClient {
+    constructor(userAgent, handlers, requestOptions) {
+        this._ignoreSslError = false;
+        this._allowRedirects = true;
+        this._allowRedirectDowngrade = false;
+        this._maxRedirects = 50;
+        this._allowRetries = false;
+        this._maxRetries = 1;
+        this._keepAlive = false;
+        this._disposed = false;
+        this.userAgent = userAgent;
+        this.handlers = handlers || [];
+        this.requestOptions = requestOptions;
+        if (requestOptions) {
+            if (requestOptions.ignoreSslError != null) {
+                this._ignoreSslError = requestOptions.ignoreSslError;
+            }
+            this._socketTimeout = requestOptions.socketTimeout;
+            if (requestOptions.allowRedirects != null) {
+                this._allowRedirects = requestOptions.allowRedirects;
+            }
+            if (requestOptions.allowRedirectDowngrade != null) {
+                this._allowRedirectDowngrade = requestOptions.allowRedirectDowngrade;
+            }
+            if (requestOptions.maxRedirects != null) {
+                this._maxRedirects = Math.max(requestOptions.maxRedirects, 0);
+            }
+            if (requestOptions.keepAlive != null) {
+                this._keepAlive = requestOptions.keepAlive;
+            }
+            if (requestOptions.allowRetries != null) {
+                this._allowRetries = requestOptions.allowRetries;
+            }
+            if (requestOptions.maxRetries != null) {
+                this._maxRetries = requestOptions.maxRetries;
+            }
+        }
+    }
+    options(requestUrl, additionalHeaders) {
+        return this.request('OPTIONS', requestUrl, null, additionalHeaders || {});
+    }
+    get(requestUrl, additionalHeaders) {
+        return this.request('GET', requestUrl, null, additionalHeaders || {});
+    }
+    del(requestUrl, additionalHeaders) {
+        return this.request('DELETE', requestUrl, null, additionalHeaders || {});
+    }
+    post(requestUrl, data, additionalHeaders) {
+        return this.request('POST', requestUrl, data, additionalHeaders || {});
+    }
+    patch(requestUrl, data, additionalHeaders) {
+        return this.request('PATCH', requestUrl, data, additionalHeaders || {});
+    }
+    put(requestUrl, data, additionalHeaders) {
+        return this.request('PUT', requestUrl, data, additionalHeaders || {});
+    }
+    head(requestUrl, additionalHeaders) {
+        return this.request('HEAD', requestUrl, null, additionalHeaders || {});
+    }
+    sendStream(verb, requestUrl, stream, additionalHeaders) {
+        return this.request(verb, requestUrl, stream, additionalHeaders);
+    }
+    /**
+     * Gets a typed object from an endpoint
+     * Be aware that not found returns a null.  Other errors (4xx, 5xx) reject the promise
+     */
+    async getJson(requestUrl, additionalHeaders = {}) {
+        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
+        let res = await this.get(requestUrl, additionalHeaders);
+        return this._processResponse(res, this.requestOptions);
+    }
+    async postJson(requestUrl, obj, additionalHeaders = {}) {
+        let data = JSON.stringify(obj, null, 2);
+        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
+        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
+        let res = await this.post(requestUrl, data, additionalHeaders);
+        return this._processResponse(res, this.requestOptions);
+    }
+    async putJson(requestUrl, obj, additionalHeaders = {}) {
+        let data = JSON.stringify(obj, null, 2);
+        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
+        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
+        let res = await this.put(requestUrl, data, additionalHeaders);
+        return this._processResponse(res, this.requestOptions);
+    }
+    async patchJson(requestUrl, obj, additionalHeaders = {}) {
+        let data = JSON.stringify(obj, null, 2);
+        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
+        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
+        let res = await this.patch(requestUrl, data, additionalHeaders);
+        return this._processResponse(res, this.requestOptions);
+    }
+    /**
+     * Makes a raw http request.
+     * All other methods such as get, post, patch, and request ultimately call this.
+     * Prefer get, del, post and patch
+     */
+    async request(verb, requestUrl, data, headers) {
+        if (this._disposed) {
+            throw new Error('Client has already been disposed.');
+        }
+        let parsedUrl = url.parse(requestUrl);
+        let info = this._prepareRequest(verb, parsedUrl, headers);
+        // Only perform retries on reads since writes may not be idempotent.
+        let maxTries = this._allowRetries && RetryableHttpVerbs.indexOf(verb) != -1
+            ? this._maxRetries + 1
+            : 1;
+        let numTries = 0;
+        let response;
+        while (numTries < maxTries) {
+            response = await this.requestRaw(info, data);
+            // Check if it's an authentication challenge
+            if (response &&
+                response.message &&
+                response.message.statusCode === HttpCodes.Unauthorized) {
+                let authenticationHandler;
+                for (let i = 0; i < this.handlers.length; i++) {
+                    if (this.handlers[i].canHandleAuthentication(response)) {
+                        authenticationHandler = this.handlers[i];
+                        break;
+                    }
+                }
+                if (authenticationHandler) {
+                    return authenticationHandler.handleAuthentication(this, info, data);
+                }
+                else {
+                    // We have received an unauthorized response but have no handlers to handle it.
+                    // Let the response return to the caller.
+                    return response;
+                }
+            }
+            let redirectsRemaining = this._maxRedirects;
+            while (HttpRedirectCodes.indexOf(response.message.statusCode) != -1 &&
+                this._allowRedirects &&
+                redirectsRemaining > 0) {
+                const redirectUrl = response.message.headers['location'];
+                if (!redirectUrl) {
+                    // if there's no location to redirect to, we won't
+                    break;
+                }
+                let parsedRedirectUrl = url.parse(redirectUrl);
+                if (parsedUrl.protocol == 'https:' &&
+                    parsedUrl.protocol != parsedRedirectUrl.protocol &&
+                    !this._allowRedirectDowngrade) {
+                    throw new Error('Redirect from HTTPS to HTTP protocol. This downgrade is not allowed for security reasons. If you want to allow this behavior, set the allowRedirectDowngrade option to true.');
+                }
+                // we need to finish reading the response before reassigning response
+                // which will leak the open socket.
+                await response.readBody();
+                // strip authorization header if redirected to a different hostname
+                if (parsedRedirectUrl.hostname !== parsedUrl.hostname) {
+                    for (let header in headers) {
+                        // header names are case insensitive
+                        if (header.toLowerCase() === 'authorization') {
+                            delete headers[header];
+                        }
+                    }
+                }
+                // let's make the request with the new redirectUrl
+                info = this._prepareRequest(verb, parsedRedirectUrl, headers);
+                response = await this.requestRaw(info, data);
+                redirectsRemaining--;
+            }
+            if (HttpResponseRetryCodes.indexOf(response.message.statusCode) == -1) {
+                // If not a retry code, return immediately instead of retrying
+                return response;
+            }
+            numTries += 1;
+            if (numTries < maxTries) {
+                await response.readBody();
+                await this._performExponentialBackoff(numTries);
+            }
+        }
+        return response;
+    }
+    /**
+     * Needs to be called if keepAlive is set to true in request options.
+     */
+    dispose() {
+        if (this._agent) {
+            this._agent.destroy();
+        }
+        this._disposed = true;
+    }
+    /**
+     * Raw request.
+     * @param info
+     * @param data
+     */
+    requestRaw(info, data) {
+        return new Promise((resolve, reject) => {
+            let callbackForResult = function (err, res) {
+                if (err) {
+                    reject(err);
+                }
+                resolve(res);
+            };
+            this.requestRawWithCallback(info, data, callbackForResult);
+        });
+    }
+    /**
+     * Raw request with callback.
+     * @param info
+     * @param data
+     * @param onResult
+     */
+    requestRawWithCallback(info, data, onResult) {
+        let socket;
+        if (typeof data === 'string') {
+            info.options.headers['Content-Length'] = Buffer.byteLength(data, 'utf8');
+        }
+        let callbackCalled = false;
+        let handleResult = (err, res) => {
+            if (!callbackCalled) {
+                callbackCalled = true;
+                onResult(err, res);
+            }
+        };
+        let req = info.httpModule.request(info.options, (msg) => {
+            let res = new HttpClientResponse(msg);
+            handleResult(null, res);
+        });
+        req.on('socket', sock => {
+            socket = sock;
+        });
+        // If we ever get disconnected, we want the socket to timeout eventually
+        req.setTimeout(this._socketTimeout || 3 * 60000, () => {
+            if (socket) {
+                socket.end();
+            }
+            handleResult(new Error('Request timeout: ' + info.options.path), null);
+        });
+        req.on('error', function (err) {
+            // err has statusCode property
+            // res should have headers
+            handleResult(err, null);
+        });
+        if (data && typeof data === 'string') {
+            req.write(data, 'utf8');
+        }
+        if (data && typeof data !== 'string') {
+            data.on('close', function () {
+                req.end();
+            });
+            data.pipe(req);
+        }
+        else {
+            req.end();
+        }
+    }
+    /**
+     * Gets an http agent. This function is useful when you need an http agent that handles
+     * routing through a proxy server - depending upon the url and proxy environment variables.
+     * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
+     */
+    getAgent(serverUrl) {
+        let parsedUrl = url.parse(serverUrl);
+        return this._getAgent(parsedUrl);
+    }
+    _prepareRequest(method, requestUrl, headers) {
+        const info = {};
+        info.parsedUrl = requestUrl;
+        const usingSsl = info.parsedUrl.protocol === 'https:';
+        info.httpModule = usingSsl ? https : http;
+        const defaultPort = usingSsl ? 443 : 80;
+        info.options = {};
+        info.options.host = info.parsedUrl.hostname;
+        info.options.port = info.parsedUrl.port
+            ? parseInt(info.parsedUrl.port)
+            : defaultPort;
+        info.options.path =
+            (info.parsedUrl.pathname || '') + (info.parsedUrl.search || '');
+        info.options.method = method;
+        info.options.headers = this._mergeHeaders(headers);
+        if (this.userAgent != null) {
+            info.options.headers['user-agent'] = this.userAgent;
+        }
+        info.options.agent = this._getAgent(info.parsedUrl);
+        // gives handlers an opportunity to participate
+        if (this.handlers) {
+            this.handlers.forEach(handler => {
+                handler.prepareRequest(info.options);
+            });
+        }
+        return info;
+    }
+    _mergeHeaders(headers) {
+        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
+        if (this.requestOptions && this.requestOptions.headers) {
+            return Object.assign({}, lowercaseKeys(this.requestOptions.headers), lowercaseKeys(headers));
+        }
+        return lowercaseKeys(headers || {});
+    }
+    _getExistingOrDefaultHeader(additionalHeaders, header, _default) {
+        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
+        let clientHeader;
+        if (this.requestOptions && this.requestOptions.headers) {
+            clientHeader = lowercaseKeys(this.requestOptions.headers)[header];
+        }
+        return additionalHeaders[header] || clientHeader || _default;
+    }
+    _getAgent(parsedUrl) {
+        let agent;
+        let proxyUrl = pm.getProxyUrl(parsedUrl);
+        let useProxy = proxyUrl && proxyUrl.hostname;
+        if (this._keepAlive && useProxy) {
+            agent = this._proxyAgent;
+        }
+        if (this._keepAlive && !useProxy) {
+            agent = this._agent;
+        }
+        // if agent is already assigned use that agent.
+        if (!!agent) {
+            return agent;
+        }
+        const usingSsl = parsedUrl.protocol === 'https:';
+        let maxSockets = 100;
+        if (!!this.requestOptions) {
+            maxSockets = this.requestOptions.maxSockets || http.globalAgent.maxSockets;
+        }
+        if (useProxy) {
+            // If using proxy, need tunnel
+            if (!tunnel) {
+                tunnel = __nccwpck_require__(4294);
+            }
+            const agentOptions = {
+                maxSockets: maxSockets,
+                keepAlive: this._keepAlive,
+                proxy: {
+                    proxyAuth: proxyUrl.auth,
+                    host: proxyUrl.hostname,
+                    port: proxyUrl.port
+                }
+            };
+            let tunnelAgent;
+            const overHttps = proxyUrl.protocol === 'https:';
+            if (usingSsl) {
+                tunnelAgent = overHttps ? tunnel.httpsOverHttps : tunnel.httpsOverHttp;
+            }
+            else {
+                tunnelAgent = overHttps ? tunnel.httpOverHttps : tunnel.httpOverHttp;
+            }
+            agent = tunnelAgent(agentOptions);
+            this._proxyAgent = agent;
+        }
+        // if reusing agent across request and tunneling agent isn't assigned create a new agent
+        if (this._keepAlive && !agent) {
+            const options = { keepAlive: this._keepAlive, maxSockets: maxSockets };
+            agent = usingSsl ? new https.Agent(options) : new http.Agent(options);
+            this._agent = agent;
+        }
+        // if not using private agent and tunnel agent isn't setup then use global agent
+        if (!agent) {
+            agent = usingSsl ? https.globalAgent : http.globalAgent;
+        }
+        if (usingSsl && this._ignoreSslError) {
+            // we don't want to set NODE_TLS_REJECT_UNAUTHORIZED=0 since that will affect request for entire process
+            // http.RequestOptions doesn't expose a way to modify RequestOptions.agent.options
+            // we have to cast it to any and change it directly
+            agent.options = Object.assign(agent.options || {}, {
+                rejectUnauthorized: false
+            });
+        }
+        return agent;
+    }
+    _performExponentialBackoff(retryNumber) {
+        retryNumber = Math.min(ExponentialBackoffCeiling, retryNumber);
+        const ms = ExponentialBackoffTimeSlice * Math.pow(2, retryNumber);
+        return new Promise(resolve => setTimeout(() => resolve(), ms));
+    }
+    static dateTimeDeserializer(key, value) {
+        if (typeof value === 'string') {
+            let a = new Date(value);
+            if (!isNaN(a.valueOf())) {
+                return a;
+            }
+        }
+        return value;
+    }
+    async _processResponse(res, options) {
+        return new Promise(async (resolve, reject) => {
+            const statusCode = res.message.statusCode;
+            const response = {
+                statusCode: statusCode,
+                result: null,
+                headers: {}
+            };
+            // not found leads to null obj returned
+            if (statusCode == HttpCodes.NotFound) {
+                resolve(response);
+            }
+            let obj;
+            let contents;
+            // get the result from the body
+            try {
+                contents = await res.readBody();
+                if (contents && contents.length > 0) {
+                    if (options && options.deserializeDates) {
+                        obj = JSON.parse(contents, HttpClient.dateTimeDeserializer);
+                    }
+                    else {
+                        obj = JSON.parse(contents);
+                    }
+                    response.result = obj;
+                }
+                response.headers = res.message.headers;
+            }
+            catch (err) {
+                // Invalid resource (contents not json);  leaving result obj null
+            }
+            // note that 3xx redirects are handled by the http layer.
+            if (statusCode > 299) {
+                let msg;
+                // if exception/error in body, attempt to get better error
+                if (obj && obj.message) {
+                    msg = obj.message;
+                }
+                else if (contents && contents.length > 0) {
+                    // it may be the case that the exception is in the body message as string
+                    msg = contents;
+                }
+                else {
+                    msg = 'Failed request: (' + statusCode + ')';
+                }
+                let err = new Error(msg);
+                // attach statusCode and body obj (if available) to the error object
+                err['statusCode'] = statusCode;
+                if (response.result) {
+                    err['result'] = response.result;
+                }
+                reject(err);
+            }
+            else {
+                resolve(response);
+            }
+        });
+    }
+}
+exports.HttpClient = HttpClient;
+
+
+/***/ }),
+
+/***/ 6443:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const url = __nccwpck_require__(8835);
+function getProxyUrl(reqUrl) {
+    let usingSsl = reqUrl.protocol === 'https:';
+    let proxyUrl;
+    if (checkBypass(reqUrl)) {
+        return proxyUrl;
+    }
+    let proxyVar;
+    if (usingSsl) {
+        proxyVar = process.env['https_proxy'] || process.env['HTTPS_PROXY'];
+    }
+    else {
+        proxyVar = process.env['http_proxy'] || process.env['HTTP_PROXY'];
+    }
+    if (proxyVar) {
+        proxyUrl = url.parse(proxyVar);
+    }
+    return proxyUrl;
+}
+exports.getProxyUrl = getProxyUrl;
+function checkBypass(reqUrl) {
+    if (!reqUrl.hostname) {
+        return false;
+    }
+    let noProxy = process.env['no_proxy'] || process.env['NO_PROXY'] || '';
+    if (!noProxy) {
+        return false;
+    }
+    // Determine the request port
+    let reqPort;
+    if (reqUrl.port) {
+        reqPort = Number(reqUrl.port);
+    }
+    else if (reqUrl.protocol === 'http:') {
+        reqPort = 80;
+    }
+    else if (reqUrl.protocol === 'https:') {
+        reqPort = 443;
+    }
+    // Format the request hostname and hostname with port
+    let upperReqHosts = [reqUrl.hostname.toUpperCase()];
+    if (typeof reqPort === 'number') {
+        upperReqHosts.push(`${upperReqHosts[0]}:${reqPort}`);
+    }
+    // Compare request host against noproxy
+    for (let upperNoProxyItem of noProxy
+        .split(',')
+        .map(x => x.trim().toUpperCase())
+        .filter(x => x)) {
+        if (upperReqHosts.some(x => x === upperNoProxyItem)) {
+            return true;
+        }
+    }
+    return false;
+}
+exports.checkBypass = checkBypass;
+
+
+/***/ }),
+
+/***/ 334:
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+async function auth(token) {
+  const tokenType = token.split(/\./).length === 3 ? "app" : /^v\d+\./.test(token) ? "installation" : "oauth";
+  return {
+    type: "token",
+    token: token,
+    tokenType
+  };
+}
+
+/**
+ * Prefix token for usage in the Authorization header
+ *
+ * @param token OAuth token or JSON Web Token
+ */
+function withAuthorizationPrefix(token) {
+  if (token.split(/\./).length === 3) {
+    return `bearer ${token}`;
+  }
+
+  return `token ${token}`;
+}
+
+async function hook(token, request, route, parameters) {
+  const endpoint = request.endpoint.merge(route, parameters);
+  endpoint.headers.authorization = withAuthorizationPrefix(token);
+  return request(endpoint);
+}
+
+const createTokenAuth = function createTokenAuth(token) {
+  if (!token) {
+    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
+  }
+
+  if (typeof token !== "string") {
+    throw new Error("[@octokit/auth-token] Token passed to createTokenAuth is not a string");
+  }
+
+  token = token.replace(/^(token|bearer) +/i, "");
+  return Object.assign(auth.bind(null, token), {
+    hook: hook.bind(null, token)
+  });
+};
+
+exports.createTokenAuth = createTokenAuth;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 6762:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+var universalUserAgent = __nccwpck_require__(5030);
+var beforeAfterHook = __nccwpck_require__(3682);
+var request = __nccwpck_require__(6234);
+var graphql = __nccwpck_require__(8467);
+var authToken = __nccwpck_require__(334);
+
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+    if (enumerableOnly) symbols = symbols.filter(function (sym) {
+      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+    });
+    keys.push.apply(keys, symbols);
+  }
+
+  return keys;
+}
+
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = arguments[i] != null ? arguments[i] : {};
+
+    if (i % 2) {
+      ownKeys(Object(source), true).forEach(function (key) {
+        _defineProperty(target, key, source[key]);
+      });
+    } else if (Object.getOwnPropertyDescriptors) {
+      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    } else {
+      ownKeys(Object(source)).forEach(function (key) {
+        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+      });
+    }
+  }
+
+  return target;
+}
+
+const VERSION = "3.1.1";
+
+class Octokit {
+  constructor(options = {}) {
+    const hook = new beforeAfterHook.Collection();
+    const requestDefaults = {
+      baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
+      headers: {},
+      request: Object.assign({}, options.request, {
+        hook: hook.bind(null, "request")
+      }),
+      mediaType: {
+        previews: [],
+        format: ""
+      }
+    }; // prepend default user agent with `options.userAgent` if set
+
+    requestDefaults.headers["user-agent"] = [options.userAgent, `octokit-core.js/${VERSION} ${universalUserAgent.getUserAgent()}`].filter(Boolean).join(" ");
+
+    if (options.baseUrl) {
+      requestDefaults.baseUrl = options.baseUrl;
+    }
+
+    if (options.previews) {
+      requestDefaults.mediaType.previews = options.previews;
+    }
+
+    if (options.timeZone) {
+      requestDefaults.headers["time-zone"] = options.timeZone;
+    }
+
+    this.request = request.request.defaults(requestDefaults);
+    this.graphql = graphql.withCustomRequest(this.request).defaults(_objectSpread2(_objectSpread2({}, requestDefaults), {}, {
+      baseUrl: requestDefaults.baseUrl.replace(/\/api\/v3$/, "/api")
+    }));
+    this.log = Object.assign({
+      debug: () => {},
+      info: () => {},
+      warn: console.warn.bind(console),
+      error: console.error.bind(console)
+    }, options.log);
+    this.hook = hook; // (1) If neither `options.authStrategy` nor `options.auth` are set, the `octokit` instance
+    //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registred.
+    // (2) If only `options.auth` is set, use the default token authentication strategy.
+    // (3) If `options.authStrategy` is set then use it and pass in `options.auth`. Always pass own request as many strategies accept a custom request instance.
+    // TODO: type `options.auth` based on `options.authStrategy`.
+
+    if (!options.authStrategy) {
+      if (!options.auth) {
+        // (1)
+        this.auth = async () => ({
+          type: "unauthenticated"
+        });
+      } else {
+        // (2)
+        const auth = authToken.createTokenAuth(options.auth); // @ts-ignore  ¯\_(ツ)_/¯
+
+        hook.wrap("request", auth.hook);
+        this.auth = auth;
+      }
+    } else {
+      const auth = options.authStrategy(Object.assign({
+        request: this.request
+      }, options.auth)); // @ts-ignore  ¯\_(ツ)_/¯
+
+      hook.wrap("request", auth.hook);
+      this.auth = auth;
+    } // apply plugins
+    // https://stackoverflow.com/a/16345172
+
+
+    const classConstructor = this.constructor;
+    classConstructor.plugins.forEach(plugin => {
+      Object.assign(this, plugin(this, options));
+    });
+  }
+
+  static defaults(defaults) {
+    const OctokitWithDefaults = class extends this {
+      constructor(...args) {
+        const options = args[0] || {};
+
+        if (typeof defaults === "function") {
+          super(defaults(options));
+          return;
+        }
+
+        super(Object.assign({}, defaults, options, options.userAgent && defaults.userAgent ? {
+          userAgent: `${options.userAgent} ${defaults.userAgent}`
+        } : null));
+      }
+
+    };
+    return OctokitWithDefaults;
+  }
+  /**
+   * Attach a plugin (or many) to your Octokit instance.
+   *
+   * @example
+   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
+   */
+
+
+  static plugin(...newPlugins) {
+    var _a;
+
+    const currentPlugins = this.plugins;
+    const NewOctokit = (_a = class extends this {}, _a.plugins = currentPlugins.concat(newPlugins.filter(plugin => !currentPlugins.includes(plugin))), _a);
+    return NewOctokit;
+  }
+
+}
+Octokit.VERSION = VERSION;
+Octokit.plugins = [];
+
+exports.Octokit = Octokit;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 9440:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var isPlainObject = _interopDefault(__nccwpck_require__(8840));
+var universalUserAgent = __nccwpck_require__(5030);
+
+function lowercaseKeys(object) {
+  if (!object) {
+    return {};
+  }
+
+  return Object.keys(object).reduce((newObj, key) => {
+    newObj[key.toLowerCase()] = object[key];
+    return newObj;
+  }, {});
+}
+
+function mergeDeep(defaults, options) {
+  const result = Object.assign({}, defaults);
+  Object.keys(options).forEach(key => {
+    if (isPlainObject(options[key])) {
+      if (!(key in defaults)) Object.assign(result, {
+        [key]: options[key]
+      });else result[key] = mergeDeep(defaults[key], options[key]);
+    } else {
+      Object.assign(result, {
+        [key]: options[key]
+      });
+    }
+  });
+  return result;
+}
+
+function merge(defaults, route, options) {
+  if (typeof route === "string") {
+    let [method, url] = route.split(" ");
+    options = Object.assign(url ? {
+      method,
+      url
+    } : {
+      url: method
+    }, options);
+  } else {
+    options = Object.assign({}, route);
+  } // lowercase header names before merging with defaults to avoid duplicates
+
+
+  options.headers = lowercaseKeys(options.headers);
+  const mergedOptions = mergeDeep(defaults || {}, options); // mediaType.previews arrays are merged, instead of overwritten
+
+  if (defaults && defaults.mediaType.previews.length) {
+    mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(preview => !mergedOptions.mediaType.previews.includes(preview)).concat(mergedOptions.mediaType.previews);
+  }
+
+  mergedOptions.mediaType.previews = mergedOptions.mediaType.previews.map(preview => preview.replace(/-preview/, ""));
+  return mergedOptions;
+}
+
+function addQueryParameters(url, parameters) {
+  const separator = /\?/.test(url) ? "&" : "?";
+  const names = Object.keys(parameters);
+
+  if (names.length === 0) {
+    return url;
+  }
+
+  return url + separator + names.map(name => {
+    if (name === "q") {
+      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
+    }
+
+    return `${name}=${encodeURIComponent(parameters[name])}`;
+  }).join("&");
+}
+
+const urlVariableRegex = /\{[^}]+\}/g;
+
+function removeNonChars(variableName) {
+  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
+}
+
+function extractUrlVariableNames(url) {
+  const matches = url.match(urlVariableRegex);
+
+  if (!matches) {
+    return [];
+  }
+
+  return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
+}
+
+function omit(object, keysToOmit) {
+  return Object.keys(object).filter(option => !keysToOmit.includes(option)).reduce((obj, key) => {
+    obj[key] = object[key];
+    return obj;
+  }, {});
+}
+
+// Based on https://github.com/bramstein/url-template, licensed under BSD
+// TODO: create separate package.
+//
+// Copyright (c) 2012-2014, Bram Stein
+// All rights reserved.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+//  1. Redistributions of source code must retain the above copyright
+//     notice, this list of conditions and the following disclaimer.
+//  2. Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
+//     documentation and/or other materials provided with the distribution.
+//  3. The name of the author may not be used to endorse or promote products
+//     derived from this software without specific prior written permission.
+// THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED
+// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+// EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+/* istanbul ignore file */
+function encodeReserved(str) {
+  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function (part) {
+    if (!/%[0-9A-Fa-f]/.test(part)) {
+      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
+    }
+
+    return part;
+  }).join("");
+}
+
+function encodeUnreserved(str) {
+  return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
+    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
+  });
+}
+
+function encodeValue(operator, value, key) {
+  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
+
+  if (key) {
+    return encodeUnreserved(key) + "=" + value;
+  } else {
+    return value;
+  }
+}
+
+function isDefined(value) {
+  return value !== undefined && value !== null;
+}
+
+function isKeyOperator(operator) {
+  return operator === ";" || operator === "&" || operator === "?";
+}
+
+function getValues(context, operator, key, modifier) {
+  var value = context[key],
+      result = [];
+
+  if (isDefined(value) && value !== "") {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      value = value.toString();
+
+      if (modifier && modifier !== "*") {
+        value = value.substring(0, parseInt(modifier, 10));
+      }
+
+      result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
+    } else {
+      if (modifier === "*") {
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function (value) {
+            result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
+          });
+        } else {
+          Object.keys(value).forEach(function (k) {
+            if (isDefined(value[k])) {
+              result.push(encodeValue(operator, value[k], k));
+            }
+          });
+        }
+      } else {
+        const tmp = [];
+
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function (value) {
+            tmp.push(encodeValue(operator, value));
+          });
+        } else {
+          Object.keys(value).forEach(function (k) {
+            if (isDefined(value[k])) {
+              tmp.push(encodeUnreserved(k));
+              tmp.push(encodeValue(operator, value[k].toString()));
+            }
+          });
+        }
+
+        if (isKeyOperator(operator)) {
+          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
+        } else if (tmp.length !== 0) {
+          result.push(tmp.join(","));
+        }
+      }
+    }
+  } else {
+    if (operator === ";") {
+      if (isDefined(value)) {
+        result.push(encodeUnreserved(key));
+      }
+    } else if (value === "" && (operator === "&" || operator === "?")) {
+      result.push(encodeUnreserved(key) + "=");
+    } else if (value === "") {
+      result.push("");
+    }
+  }
+
+  return result;
+}
+
+function parseUrl(template) {
+  return {
+    expand: expand.bind(null, template)
+  };
+}
+
+function expand(template, context) {
+  var operators = ["+", "#", ".", "/", ";", "?", "&"];
+  return template.replace(/\{([^\{\}]+)\}|([^\{\}]+)/g, function (_, expression, literal) {
+    if (expression) {
+      let operator = "";
+      const values = [];
+
+      if (operators.indexOf(expression.charAt(0)) !== -1) {
+        operator = expression.charAt(0);
+        expression = expression.substr(1);
+      }
+
+      expression.split(/,/g).forEach(function (variable) {
+        var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
+        values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
+      });
+
+      if (operator && operator !== "+") {
+        var separator = ",";
+
+        if (operator === "?") {
+          separator = "&";
+        } else if (operator !== "#") {
+          separator = operator;
+        }
+
+        return (values.length !== 0 ? operator : "") + values.join(separator);
+      } else {
+        return values.join(",");
+      }
+    } else {
+      return encodeReserved(literal);
+    }
+  });
+}
+
+function parse(options) {
+  // https://fetch.spec.whatwg.org/#methods
+  let method = options.method.toUpperCase(); // replace :varname with {varname} to make it RFC 6570 compatible
+
+  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{+$1}");
+  let headers = Object.assign({}, options.headers);
+  let body;
+  let parameters = omit(options, ["method", "baseUrl", "url", "headers", "request", "mediaType"]); // extract variable names from URL to calculate remaining variables later
+
+  const urlVariableNames = extractUrlVariableNames(url);
+  url = parseUrl(url).expand(parameters);
+
+  if (!/^http/.test(url)) {
+    url = options.baseUrl + url;
+  }
+
+  const omittedParameters = Object.keys(options).filter(option => urlVariableNames.includes(option)).concat("baseUrl");
+  const remainingParameters = omit(parameters, omittedParameters);
+  const isBinaryRequset = /application\/octet-stream/i.test(headers.accept);
+
+  if (!isBinaryRequset) {
+    if (options.mediaType.format) {
+      // e.g. application/vnd.github.v3+json => application/vnd.github.v3.raw
+      headers.accept = headers.accept.split(/,/).map(preview => preview.replace(/application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/, `application/vnd$1$2.${options.mediaType.format}`)).join(",");
+    }
+
+    if (options.mediaType.previews.length) {
+      const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
+      headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map(preview => {
+        const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
+        return `application/vnd.github.${preview}-preview${format}`;
+      }).join(",");
+    }
+  } // for GET/HEAD requests, set URL query parameters from remaining parameters
+  // for PATCH/POST/PUT/DELETE requests, set request body from remaining parameters
+
+
+  if (["GET", "HEAD"].includes(method)) {
+    url = addQueryParameters(url, remainingParameters);
+  } else {
+    if ("data" in remainingParameters) {
+      body = remainingParameters.data;
+    } else {
+      if (Object.keys(remainingParameters).length) {
+        body = remainingParameters;
+      } else {
+        headers["content-length"] = 0;
+      }
+    }
+  } // default content-type for JSON if body is set
+
+
+  if (!headers["content-type"] && typeof body !== "undefined") {
+    headers["content-type"] = "application/json; charset=utf-8";
+  } // GitHub expects 'content-length: 0' header for PUT/PATCH requests without body.
+  // fetch does not allow to set `content-length` header, but we can set body to an empty string
+
+
+  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
+    body = "";
+  } // Only return body/request keys if present
+
+
+  return Object.assign({
+    method,
+    url,
+    headers
+  }, typeof body !== "undefined" ? {
+    body
+  } : null, options.request ? {
+    request: options.request
+  } : null);
+}
+
+function endpointWithDefaults(defaults, route, options) {
+  return parse(merge(defaults, route, options));
+}
+
+function withDefaults(oldDefaults, newDefaults) {
+  const DEFAULTS = merge(oldDefaults, newDefaults);
+  const endpoint = endpointWithDefaults.bind(null, DEFAULTS);
+  return Object.assign(endpoint, {
+    DEFAULTS,
+    defaults: withDefaults.bind(null, DEFAULTS),
+    merge: merge.bind(null, DEFAULTS),
+    parse
+  });
+}
+
+const VERSION = "6.0.5";
+
+const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`; // DEFAULTS has all properties set that EndpointOptions has, except url.
+// So we use RequestParameters and add method as additional required property.
+
+const DEFAULTS = {
+  method: "GET",
+  baseUrl: "https://api.github.com",
+  headers: {
+    accept: "application/vnd.github.v3+json",
+    "user-agent": userAgent
+  },
+  mediaType: {
+    format: "",
+    previews: []
+  }
+};
+
+const endpoint = withDefaults(null, DEFAULTS);
+
+exports.endpoint = endpoint;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 8467:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+var request = __nccwpck_require__(6234);
+var universalUserAgent = __nccwpck_require__(5030);
+
+const VERSION = "4.5.2";
+
+class GraphqlError extends Error {
+  constructor(request, response) {
+    const message = response.data.errors[0].message;
+    super(message);
+    Object.assign(this, response.data);
+    this.name = "GraphqlError";
+    this.request = request; // Maintains proper stack trace (only available on V8)
+
+    /* istanbul ignore next */
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+
+}
+
+const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query", "mediaType"];
+function graphql(request, query, options) {
+  options = typeof query === "string" ? options = Object.assign({
+    query
+  }, options) : options = query;
+  const requestOptions = Object.keys(options).reduce((result, key) => {
+    if (NON_VARIABLE_OPTIONS.includes(key)) {
+      result[key] = options[key];
+      return result;
+    }
+
+    if (!result.variables) {
+      result.variables = {};
+    }
+
+    result.variables[key] = options[key];
+    return result;
+  }, {});
+  return request(requestOptions).then(response => {
+    if (response.data.errors) {
+      throw new GraphqlError(requestOptions, {
+        data: response.data
+      });
+    }
+
+    return response.data.data;
+  });
+}
+
+function withDefaults(request$1, newDefaults) {
+  const newRequest = request$1.defaults(newDefaults);
+
+  const newApi = (query, options) => {
+    return graphql(newRequest, query, options);
+  };
+
+  return Object.assign(newApi, {
+    defaults: withDefaults.bind(null, newRequest),
+    endpoint: request.request.endpoint
+  });
+}
+
+const graphql$1 = withDefaults(request.request, {
+  headers: {
+    "user-agent": `octokit-graphql.js/${VERSION} ${universalUserAgent.getUserAgent()}`
+  },
+  method: "POST",
+  url: "/graphql"
+});
+function withCustomRequest(customRequest) {
+  return withDefaults(customRequest, {
+    method: "POST",
+    url: "/graphql"
+  });
+}
+
+exports.graphql = graphql$1;
+exports.withCustomRequest = withCustomRequest;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 4193:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+const VERSION = "2.2.4";
+
+/**
+ * Some “list” response that can be paginated have a different response structure
+ *
+ * They have a `total_count` key in the response (search also has `incomplete_results`,
+ * /installation/repositories also has `repository_selection`), as well as a key with
+ * the list of the items which name varies from endpoint to endpoint.
+ *
+ * Octokit normalizes these responses so that paginated results are always returned following
+ * the same structure. One challenge is that if the list response has only one page, no Link
+ * header is provided, so this header alone is not sufficient to check wether a response is
+ * paginated or not.
+ *
+ * We check if a "total_count" key is present in the response data, but also make sure that
+ * a "url" property is not, as the "Get the combined status for a specific ref" endpoint would
+ * otherwise match: https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
+ */
+function normalizePaginatedListResponse(response) {
+  const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
+  if (!responseNeedsNormalization) return response; // keep the additional properties intact as there is currently no other way
+  // to retrieve the same information.
+
+  const incompleteResults = response.data.incomplete_results;
+  const repositorySelection = response.data.repository_selection;
+  const totalCount = response.data.total_count;
+  delete response.data.incomplete_results;
+  delete response.data.repository_selection;
+  delete response.data.total_count;
+  const namespaceKey = Object.keys(response.data)[0];
+  const data = response.data[namespaceKey];
+  response.data = data;
+
+  if (typeof incompleteResults !== "undefined") {
+    response.data.incomplete_results = incompleteResults;
+  }
+
+  if (typeof repositorySelection !== "undefined") {
+    response.data.repository_selection = repositorySelection;
+  }
+
+  response.data.total_count = totalCount;
+  return response;
+}
+
+function iterator(octokit, route, parameters) {
+  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
+  const requestMethod = typeof route === "function" ? route : octokit.request;
+  const method = options.method;
+  const headers = options.headers;
+  let url = options.url;
+  return {
+    [Symbol.asyncIterator]: () => ({
+      next() {
+        if (!url) {
+          return Promise.resolve({
+            done: true
+          });
+        }
+
+        return requestMethod({
+          method,
+          url,
+          headers
+        }).then(normalizePaginatedListResponse).then(response => {
+          // `response.headers.link` format:
+          // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
+          // sets `url` to undefined if "next" URL is not present or `link` header is not set
+          url = ((response.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
+          return {
+            value: response
+          };
+        });
+      }
+
+    })
+  };
+}
+
+function paginate(octokit, route, parameters, mapFn) {
+  if (typeof parameters === "function") {
+    mapFn = parameters;
+    parameters = undefined;
+  }
+
+  return gather(octokit, [], iterator(octokit, route, parameters)[Symbol.asyncIterator](), mapFn);
+}
+
+function gather(octokit, results, iterator, mapFn) {
+  return iterator.next().then(result => {
+    if (result.done) {
+      return results;
+    }
+
+    let earlyExit = false;
+
+    function done() {
+      earlyExit = true;
+    }
+
+    results = results.concat(mapFn ? mapFn(result.value, done) : result.value.data);
+
+    if (earlyExit) {
+      return results;
+    }
+
+    return gather(octokit, results, iterator, mapFn);
+  });
+}
+
+/**
+ * @param octokit Octokit instance
+ * @param options Options passed to Octokit constructor
+ */
+
+function paginateRest(octokit) {
+  return {
+    paginate: Object.assign(paginate.bind(null, octokit), {
+      iterator: iterator.bind(null, octokit)
+    })
+  };
+}
+paginateRest.VERSION = VERSION;
+
+exports.paginateRest = paginateRest;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
+/***/ 3044:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 const Endpoints = {
   actions: {
@@ -1332,868 +5415,84 @@ exports.restEndpointMethods = restEndpointMethods;
 
 /***/ }),
 
-/***/ 53:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Context = void 0;
-const fs_1 = __webpack_require__(747);
-const os_1 = __webpack_require__(87);
-class Context {
-    /**
-     * Hydrate the context from the environment
-     */
-    constructor() {
-        this.payload = {};
-        if (process.env.GITHUB_EVENT_PATH) {
-            if (fs_1.existsSync(process.env.GITHUB_EVENT_PATH)) {
-                this.payload = JSON.parse(fs_1.readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: 'utf8' }));
-            }
-            else {
-                const path = process.env.GITHUB_EVENT_PATH;
-                process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${os_1.EOL}`);
-            }
-        }
-        this.eventName = process.env.GITHUB_EVENT_NAME;
-        this.sha = process.env.GITHUB_SHA;
-        this.ref = process.env.GITHUB_REF;
-        this.workflow = process.env.GITHUB_WORKFLOW;
-        this.action = process.env.GITHUB_ACTION;
-        this.actor = process.env.GITHUB_ACTOR;
-        this.job = process.env.GITHUB_JOB;
-        this.runNumber = parseInt(process.env.GITHUB_RUN_NUMBER, 10);
-        this.runId = parseInt(process.env.GITHUB_RUN_ID, 10);
-    }
-    get issue() {
-        const payload = this.payload;
-        return Object.assign(Object.assign({}, this.repo), { number: (payload.issue || payload.pull_request || payload).number });
-    }
-    get repo() {
-        if (process.env.GITHUB_REPOSITORY) {
-            const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
-            return { owner, repo };
-        }
-        if (this.payload.repository) {
-            return {
-                owner: this.payload.repository.owner.login,
-                repo: this.payload.repository.name
-            };
-        }
-        throw new Error("context.repo requires a GITHUB_REPOSITORY environment variable like 'owner/repo'");
-    }
-}
-exports.Context = Context;
-//# sourceMappingURL=context.js.map
-
-/***/ }),
-
-/***/ 87:
-/***/ (function(module) {
-
-module.exports = require("os");
-
-/***/ }),
-
-/***/ 109:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const core = __importStar(__webpack_require__(186));
-const IssueProcessor_1 = __webpack_require__(407);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const args = getAndValidateArgs();
-            const processor = new IssueProcessor_1.IssueProcessor(args);
-            yield processor.processIssues();
-        }
-        catch (error) {
-            core.error(error);
-            core.setFailed(error.message);
-        }
-    });
-}
-function getAndValidateArgs() {
-    const args = {
-        repoToken: core.getInput('repo-token', { required: true }),
-        staleIssueMessage: core.getInput('stale-issue-message'),
-        stalePrMessage: core.getInput('stale-pr-message'),
-        closeIssueMessage: core.getInput('close-issue-message'),
-        closePrMessage: core.getInput('close-pr-message'),
-        daysBeforeStale: parseInt(core.getInput('days-before-stale', { required: true })),
-        daysBeforeClose: parseInt(core.getInput('days-before-close', { required: true })),
-        staleIssueLabel: core.getInput('stale-issue-label', { required: true }),
-        closeIssueLabel: core.getInput('close-issue-label'),
-        exemptIssueLabels: core.getInput('exempt-issue-labels'),
-        stalePrLabel: core.getInput('stale-pr-label', { required: true }),
-        closePrLabel: core.getInput('close-pr-label'),
-        exemptPrLabels: core.getInput('exempt-pr-labels'),
-        onlyLabels: core.getInput('only-labels'),
-        operationsPerRun: parseInt(core.getInput('operations-per-run', { required: true })),
-        removeStaleWhenUpdated: !(core.getInput('remove-stale-when-updated') === 'false'),
-        debugOnly: core.getInput('debug-only') === 'true',
-        ascending: core.getInput('ascending') === 'true',
-        skipStalePrMessage: core.getInput('skip-stale-pr-message') === 'true',
-        skipStaleIssueMessage: core.getInput('skip-stale-issue-message') === 'true'
-    };
-    for (const numberInput of [
-        'days-before-stale',
-        'days-before-close',
-        'operations-per-run'
-    ]) {
-        if (isNaN(parseInt(core.getInput(numberInput)))) {
-            throw Error(`input ${numberInput} did not parse to a valid integer`);
-        }
-    }
-    return args;
-}
-run();
-
-
-/***/ }),
-
-/***/ 186:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const command_1 = __webpack_require__(351);
-const os = __importStar(__webpack_require__(87));
-const path = __importStar(__webpack_require__(622));
-/**
- * The code to exit an action
- */
-var ExitCode;
-(function (ExitCode) {
-    /**
-     * A code indicating that the action was successful
-     */
-    ExitCode[ExitCode["Success"] = 0] = "Success";
-    /**
-     * A code indicating that the action was a failure
-     */
-    ExitCode[ExitCode["Failure"] = 1] = "Failure";
-})(ExitCode = exports.ExitCode || (exports.ExitCode = {}));
-//-----------------------------------------------------------------------
-// Variables
-//-----------------------------------------------------------------------
-/**
- * Sets env variable for this action and future actions in the job
- * @param name the name of the variable to set
- * @param val the value of the variable. Non-string values will be converted to a string via JSON.stringify
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function exportVariable(name, val) {
-    const convertedVal = command_1.toCommandValue(val);
-    process.env[name] = convertedVal;
-    command_1.issueCommand('set-env', { name }, convertedVal);
-}
-exports.exportVariable = exportVariable;
-/**
- * Registers a secret which will get masked from logs
- * @param secret value of the secret
- */
-function setSecret(secret) {
-    command_1.issueCommand('add-mask', {}, secret);
-}
-exports.setSecret = setSecret;
-/**
- * Prepends inputPath to the PATH (for this action and future actions)
- * @param inputPath
- */
-function addPath(inputPath) {
-    command_1.issueCommand('add-path', {}, inputPath);
-    process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
-}
-exports.addPath = addPath;
-/**
- * Gets the value of an input.  The value is also trimmed.
- *
- * @param     name     name of the input to get
- * @param     options  optional. See InputOptions.
- * @returns   string
- */
-function getInput(name, options) {
-    const val = process.env[`INPUT_${name.replace(/ /g, '_').toUpperCase()}`] || '';
-    if (options && options.required && !val) {
-        throw new Error(`Input required and not supplied: ${name}`);
-    }
-    return val.trim();
-}
-exports.getInput = getInput;
-/**
- * Sets the value of an output.
- *
- * @param     name     name of the output to set
- * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function setOutput(name, value) {
-    command_1.issueCommand('set-output', { name }, value);
-}
-exports.setOutput = setOutput;
-/**
- * Enables or disables the echoing of commands into stdout for the rest of the step.
- * Echoing is disabled by default if ACTIONS_STEP_DEBUG is not set.
- *
- */
-function setCommandEcho(enabled) {
-    command_1.issue('echo', enabled ? 'on' : 'off');
-}
-exports.setCommandEcho = setCommandEcho;
-//-----------------------------------------------------------------------
-// Results
-//-----------------------------------------------------------------------
-/**
- * Sets the action status to failed.
- * When the action exits it will be with an exit code of 1
- * @param message add error issue message
- */
-function setFailed(message) {
-    process.exitCode = ExitCode.Failure;
-    error(message);
-}
-exports.setFailed = setFailed;
-//-----------------------------------------------------------------------
-// Logging Commands
-//-----------------------------------------------------------------------
-/**
- * Gets whether Actions Step Debug is on or not
- */
-function isDebug() {
-    return process.env['RUNNER_DEBUG'] === '1';
-}
-exports.isDebug = isDebug;
-/**
- * Writes debug message to user log
- * @param message debug message
- */
-function debug(message) {
-    command_1.issueCommand('debug', {}, message);
-}
-exports.debug = debug;
-/**
- * Adds an error issue
- * @param message error issue message. Errors will be converted to string via toString()
- */
-function error(message) {
-    command_1.issue('error', message instanceof Error ? message.toString() : message);
-}
-exports.error = error;
-/**
- * Adds an warning issue
- * @param message warning issue message. Errors will be converted to string via toString()
- */
-function warning(message) {
-    command_1.issue('warning', message instanceof Error ? message.toString() : message);
-}
-exports.warning = warning;
-/**
- * Writes info to log with console.log.
- * @param message info message
- */
-function info(message) {
-    process.stdout.write(message + os.EOL);
-}
-exports.info = info;
-/**
- * Begin an output group.
- *
- * Output until the next `groupEnd` will be foldable in this group
- *
- * @param name The name of the output group
- */
-function startGroup(name) {
-    command_1.issue('group', name);
-}
-exports.startGroup = startGroup;
-/**
- * End an output group.
- */
-function endGroup() {
-    command_1.issue('endgroup');
-}
-exports.endGroup = endGroup;
-/**
- * Wrap an asynchronous function call in a group.
- *
- * Returns the same type as the function itself.
- *
- * @param name The name of the group
- * @param fn The function to wrap in the group
- */
-function group(name, fn) {
-    return __awaiter(this, void 0, void 0, function* () {
-        startGroup(name);
-        let result;
-        try {
-            result = yield fn();
-        }
-        finally {
-            endGroup();
-        }
-        return result;
-    });
-}
-exports.group = group;
-//-----------------------------------------------------------------------
-// Wrapper action state
-//-----------------------------------------------------------------------
-/**
- * Saves state for current action, the state can only be retrieved by this action's post job execution.
- *
- * @param     name     name of the state to store
- * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function saveState(name, value) {
-    command_1.issueCommand('save-state', { name }, value);
-}
-exports.saveState = saveState;
-/**
- * Gets the value of an state set by this action's main execution.
- *
- * @param     name     name of the state to get
- * @returns   string
- */
-function getState(name) {
-    return process.env[`STATE_${name}`] || '';
-}
-exports.getState = getState;
-//# sourceMappingURL=core.js.map
-
-/***/ }),
-
-/***/ 193:
-/***/ (function(__unusedmodule, exports) {
+/***/ 537:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-const VERSION = "2.2.4";
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
+var deprecation = __nccwpck_require__(8932);
+var once = _interopDefault(__nccwpck_require__(1223));
+
+const logOnce = once(deprecation => console.warn(deprecation));
 /**
- * Some “list” response that can be paginated have a different response structure
- *
- * They have a `total_count` key in the response (search also has `incomplete_results`,
- * /installation/repositories also has `repository_selection`), as well as a key with
- * the list of the items which name varies from endpoint to endpoint.
- *
- * Octokit normalizes these responses so that paginated results are always returned following
- * the same structure. One challenge is that if the list response has only one page, no Link
- * header is provided, so this header alone is not sufficient to check wether a response is
- * paginated or not.
- *
- * We check if a "total_count" key is present in the response data, but also make sure that
- * a "url" property is not, as the "Get the combined status for a specific ref" endpoint would
- * otherwise match: https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
+ * Error with extra properties to help with debugging
  */
-function normalizePaginatedListResponse(response) {
-  const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
-  if (!responseNeedsNormalization) return response; // keep the additional properties intact as there is currently no other way
-  // to retrieve the same information.
 
-  const incompleteResults = response.data.incomplete_results;
-  const repositorySelection = response.data.repository_selection;
-  const totalCount = response.data.total_count;
-  delete response.data.incomplete_results;
-  delete response.data.repository_selection;
-  delete response.data.total_count;
-  const namespaceKey = Object.keys(response.data)[0];
-  const data = response.data[namespaceKey];
-  response.data = data;
+class RequestError extends Error {
+  constructor(message, statusCode, options) {
+    super(message); // Maintains proper stack trace (only available on V8)
 
-  if (typeof incompleteResults !== "undefined") {
-    response.data.incomplete_results = incompleteResults;
-  }
+    /* istanbul ignore next */
 
-  if (typeof repositorySelection !== "undefined") {
-    response.data.repository_selection = repositorySelection;
-  }
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
 
-  response.data.total_count = totalCount;
-  return response;
-}
-
-function iterator(octokit, route, parameters) {
-  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
-  const requestMethod = typeof route === "function" ? route : octokit.request;
-  const method = options.method;
-  const headers = options.headers;
-  let url = options.url;
-  return {
-    [Symbol.asyncIterator]: () => ({
-      next() {
-        if (!url) {
-          return Promise.resolve({
-            done: true
-          });
-        }
-
-        return requestMethod({
-          method,
-          url,
-          headers
-        }).then(normalizePaginatedListResponse).then(response => {
-          // `response.headers.link` format:
-          // '<https://api.github.com/users/aseemk/followers?page=2>; rel="next", <https://api.github.com/users/aseemk/followers?page=2>; rel="last"'
-          // sets `url` to undefined if "next" URL is not present or `link` header is not set
-          url = ((response.headers.link || "").match(/<([^>]+)>;\s*rel="next"/) || [])[1];
-          return {
-            value: response
-          };
-        });
+    this.name = "HttpError";
+    this.status = statusCode;
+    Object.defineProperty(this, "code", {
+      get() {
+        logOnce(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
+        return statusCode;
       }
 
-    })
-  };
-}
+    });
+    this.headers = options.headers || {}; // redact request credentials without mutating original request options
 
-function paginate(octokit, route, parameters, mapFn) {
-  if (typeof parameters === "function") {
-    mapFn = parameters;
-    parameters = undefined;
+    const requestCopy = Object.assign({}, options.request);
+
+    if (options.request.headers.authorization) {
+      requestCopy.headers = Object.assign({}, options.request.headers, {
+        authorization: options.request.headers.authorization.replace(/ .*$/, " [REDACTED]")
+      });
+    }
+
+    requestCopy.url = requestCopy.url // client_id & client_secret can be passed as URL query parameters to increase rate limit
+    // see https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
+    .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
+    // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
+    .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
+    this.request = requestCopy;
   }
 
-  return gather(octokit, [], iterator(octokit, route, parameters)[Symbol.asyncIterator](), mapFn);
 }
 
-function gather(octokit, results, iterator, mapFn) {
-  return iterator.next().then(result => {
-    if (result.done) {
-      return results;
-    }
-
-    let earlyExit = false;
-
-    function done() {
-      earlyExit = true;
-    }
-
-    results = results.concat(mapFn ? mapFn(result.value, done) : result.value.data);
-
-    if (earlyExit) {
-      return results;
-    }
-
-    return gather(octokit, results, iterator, mapFn);
-  });
-}
-
-/**
- * @param octokit Octokit instance
- * @param options Options passed to Octokit constructor
- */
-
-function paginateRest(octokit) {
-  return {
-    paginate: Object.assign(paginate.bind(null, octokit), {
-      iterator: iterator.bind(null, octokit)
-    })
-  };
-}
-paginateRest.VERSION = VERSION;
-
-exports.paginateRest = paginateRest;
+exports.RequestError = RequestError;
 //# sourceMappingURL=index.js.map
 
 
 /***/ }),
 
-/***/ 211:
-/***/ (function(module) {
-
-module.exports = require("https");
-
-/***/ }),
-
-/***/ 219:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ 6234:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-var net = __webpack_require__(631);
-var tls = __webpack_require__(16);
-var http = __webpack_require__(605);
-var https = __webpack_require__(211);
-var events = __webpack_require__(614);
-var assert = __webpack_require__(357);
-var util = __webpack_require__(669);
-
-
-exports.httpOverHttp = httpOverHttp;
-exports.httpsOverHttp = httpsOverHttp;
-exports.httpOverHttps = httpOverHttps;
-exports.httpsOverHttps = httpsOverHttps;
-
-
-function httpOverHttp(options) {
-  var agent = new TunnelingAgent(options);
-  agent.request = http.request;
-  return agent;
-}
-
-function httpsOverHttp(options) {
-  var agent = new TunnelingAgent(options);
-  agent.request = http.request;
-  agent.createSocket = createSecureSocket;
-  agent.defaultPort = 443;
-  return agent;
-}
-
-function httpOverHttps(options) {
-  var agent = new TunnelingAgent(options);
-  agent.request = https.request;
-  return agent;
-}
-
-function httpsOverHttps(options) {
-  var agent = new TunnelingAgent(options);
-  agent.request = https.request;
-  agent.createSocket = createSecureSocket;
-  agent.defaultPort = 443;
-  return agent;
-}
-
-
-function TunnelingAgent(options) {
-  var self = this;
-  self.options = options || {};
-  self.proxyOptions = self.options.proxy || {};
-  self.maxSockets = self.options.maxSockets || http.Agent.defaultMaxSockets;
-  self.requests = [];
-  self.sockets = [];
-
-  self.on('free', function onFree(socket, host, port, localAddress) {
-    var options = toOptions(host, port, localAddress);
-    for (var i = 0, len = self.requests.length; i < len; ++i) {
-      var pending = self.requests[i];
-      if (pending.host === options.host && pending.port === options.port) {
-        // Detect the request to connect same origin server,
-        // reuse the connection.
-        self.requests.splice(i, 1);
-        pending.request.onSocket(socket);
-        return;
-      }
-    }
-    socket.destroy();
-    self.removeSocket(socket);
-  });
-}
-util.inherits(TunnelingAgent, events.EventEmitter);
-
-TunnelingAgent.prototype.addRequest = function addRequest(req, host, port, localAddress) {
-  var self = this;
-  var options = mergeOptions({request: req}, self.options, toOptions(host, port, localAddress));
-
-  if (self.sockets.length >= this.maxSockets) {
-    // We are over limit so we'll add it to the queue.
-    self.requests.push(options);
-    return;
-  }
-
-  // If we are under maxSockets create a new one.
-  self.createSocket(options, function(socket) {
-    socket.on('free', onFree);
-    socket.on('close', onCloseOrRemove);
-    socket.on('agentRemove', onCloseOrRemove);
-    req.onSocket(socket);
-
-    function onFree() {
-      self.emit('free', socket, options);
-    }
-
-    function onCloseOrRemove(err) {
-      self.removeSocket(socket);
-      socket.removeListener('free', onFree);
-      socket.removeListener('close', onCloseOrRemove);
-      socket.removeListener('agentRemove', onCloseOrRemove);
-    }
-  });
-};
-
-TunnelingAgent.prototype.createSocket = function createSocket(options, cb) {
-  var self = this;
-  var placeholder = {};
-  self.sockets.push(placeholder);
-
-  var connectOptions = mergeOptions({}, self.proxyOptions, {
-    method: 'CONNECT',
-    path: options.host + ':' + options.port,
-    agent: false,
-    headers: {
-      host: options.host + ':' + options.port
-    }
-  });
-  if (options.localAddress) {
-    connectOptions.localAddress = options.localAddress;
-  }
-  if (connectOptions.proxyAuth) {
-    connectOptions.headers = connectOptions.headers || {};
-    connectOptions.headers['Proxy-Authorization'] = 'Basic ' +
-        new Buffer(connectOptions.proxyAuth).toString('base64');
-  }
-
-  debug('making CONNECT request');
-  var connectReq = self.request(connectOptions);
-  connectReq.useChunkedEncodingByDefault = false; // for v0.6
-  connectReq.once('response', onResponse); // for v0.6
-  connectReq.once('upgrade', onUpgrade);   // for v0.6
-  connectReq.once('connect', onConnect);   // for v0.7 or later
-  connectReq.once('error', onError);
-  connectReq.end();
-
-  function onResponse(res) {
-    // Very hacky. This is necessary to avoid http-parser leaks.
-    res.upgrade = true;
-  }
-
-  function onUpgrade(res, socket, head) {
-    // Hacky.
-    process.nextTick(function() {
-      onConnect(res, socket, head);
-    });
-  }
-
-  function onConnect(res, socket, head) {
-    connectReq.removeAllListeners();
-    socket.removeAllListeners();
-
-    if (res.statusCode !== 200) {
-      debug('tunneling socket could not be established, statusCode=%d',
-        res.statusCode);
-      socket.destroy();
-      var error = new Error('tunneling socket could not be established, ' +
-        'statusCode=' + res.statusCode);
-      error.code = 'ECONNRESET';
-      options.request.emit('error', error);
-      self.removeSocket(placeholder);
-      return;
-    }
-    if (head.length > 0) {
-      debug('got illegal response body from proxy');
-      socket.destroy();
-      var error = new Error('got illegal response body from proxy');
-      error.code = 'ECONNRESET';
-      options.request.emit('error', error);
-      self.removeSocket(placeholder);
-      return;
-    }
-    debug('tunneling connection has established');
-    self.sockets[self.sockets.indexOf(placeholder)] = socket;
-    return cb(socket);
-  }
-
-  function onError(cause) {
-    connectReq.removeAllListeners();
-
-    debug('tunneling socket could not be established, cause=%s\n',
-          cause.message, cause.stack);
-    var error = new Error('tunneling socket could not be established, ' +
-                          'cause=' + cause.message);
-    error.code = 'ECONNRESET';
-    options.request.emit('error', error);
-    self.removeSocket(placeholder);
-  }
-};
-
-TunnelingAgent.prototype.removeSocket = function removeSocket(socket) {
-  var pos = this.sockets.indexOf(socket)
-  if (pos === -1) {
-    return;
-  }
-  this.sockets.splice(pos, 1);
-
-  var pending = this.requests.shift();
-  if (pending) {
-    // If we have pending requests and a socket gets closed a new one
-    // needs to be created to take over in the pool for the one that closed.
-    this.createSocket(pending, function(socket) {
-      pending.request.onSocket(socket);
-    });
-  }
-};
-
-function createSecureSocket(options, cb) {
-  var self = this;
-  TunnelingAgent.prototype.createSocket.call(self, options, function(socket) {
-    var hostHeader = options.request.getHeader('host');
-    var tlsOptions = mergeOptions({}, self.options, {
-      socket: socket,
-      servername: hostHeader ? hostHeader.replace(/:.*$/, '') : options.host
-    });
-
-    // 0 is dummy port for v0.6
-    var secureSocket = tls.connect(0, tlsOptions);
-    self.sockets[self.sockets.indexOf(socket)] = secureSocket;
-    cb(secureSocket);
-  });
-}
-
-
-function toOptions(host, port, localAddress) {
-  if (typeof host === 'string') { // since v0.10
-    return {
-      host: host,
-      port: port,
-      localAddress: localAddress
-    };
-  }
-  return host; // for v0.11 or later
-}
-
-function mergeOptions(target) {
-  for (var i = 1, len = arguments.length; i < len; ++i) {
-    var overrides = arguments[i];
-    if (typeof overrides === 'object') {
-      var keys = Object.keys(overrides);
-      for (var j = 0, keyLen = keys.length; j < keyLen; ++j) {
-        var k = keys[j];
-        if (overrides[k] !== undefined) {
-          target[k] = overrides[k];
-        }
-      }
-    }
-  }
-  return target;
-}
-
-
-var debug;
-if (process.env.NODE_DEBUG && /\btunnel\b/.test(process.env.NODE_DEBUG)) {
-  debug = function() {
-    var args = Array.prototype.slice.call(arguments);
-    if (typeof args[0] === 'string') {
-      args[0] = 'TUNNEL: ' + args[0];
-    } else {
-      args.unshift('TUNNEL:');
-    }
-    console.error.apply(console, args);
-  }
-} else {
-  debug = function() {};
-}
-exports.debug = debug; // for test
-
-
-/***/ }),
-
-/***/ 223:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-var wrappy = __webpack_require__(940)
-module.exports = wrappy(once)
-module.exports.strict = wrappy(onceStrict)
-
-once.proto = once(function () {
-  Object.defineProperty(Function.prototype, 'once', {
-    value: function () {
-      return once(this)
-    },
-    configurable: true
-  })
-
-  Object.defineProperty(Function.prototype, 'onceStrict', {
-    value: function () {
-      return onceStrict(this)
-    },
-    configurable: true
-  })
-})
-
-function once (fn) {
-  var f = function () {
-    if (f.called) return f.value
-    f.called = true
-    return f.value = fn.apply(this, arguments)
-  }
-  f.called = false
-  return f
-}
-
-function onceStrict (fn) {
-  var f = function () {
-    if (f.called)
-      throw new Error(f.onceError)
-    f.called = true
-    return f.value = fn.apply(this, arguments)
-  }
-  var name = fn.name || 'Function wrapped with `once`'
-  f.onceError = name + " shouldn't be called more than once"
-  f.called = false
-  return f
-}
-
-
-/***/ }),
-
-/***/ 234:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var endpoint = __webpack_require__(440);
-var universalUserAgent = __webpack_require__(429);
-var isPlainObject = _interopDefault(__webpack_require__(840));
-var nodeFetch = _interopDefault(__webpack_require__(467));
-var requestError = __webpack_require__(537);
+var endpoint = __nccwpck_require__(9440);
+var universalUserAgent = __nccwpck_require__(5030);
+var isPlainObject = _interopDefault(__nccwpck_require__(8840));
+var nodeFetch = _interopDefault(__nccwpck_require__(467));
+var requestError = __nccwpck_require__(537);
 
 const VERSION = "5.4.7";
 
@@ -2335,1091 +5634,871 @@ exports.request = request;
 
 /***/ }),
 
-/***/ 294:
-/***/ (function(module, __unusedexports, __webpack_require__) {
+/***/ 8512:
+/***/ ((module) => {
 
-module.exports = __webpack_require__(219);
+"use strict";
+
+const ansiEscapes = module.exports;
+// TODO: remove this in the next major version
+module.exports.default = ansiEscapes;
+
+const ESC = '\u001B[';
+const OSC = '\u001B]';
+const BEL = '\u0007';
+const SEP = ';';
+const isTerminalApp = process.env.TERM_PROGRAM === 'Apple_Terminal';
+
+ansiEscapes.cursorTo = (x, y) => {
+	if (typeof x !== 'number') {
+		throw new TypeError('The `x` argument is required');
+	}
+
+	if (typeof y !== 'number') {
+		return ESC + (x + 1) + 'G';
+	}
+
+	return ESC + (y + 1) + ';' + (x + 1) + 'H';
+};
+
+ansiEscapes.cursorMove = (x, y) => {
+	if (typeof x !== 'number') {
+		throw new TypeError('The `x` argument is required');
+	}
+
+	let ret = '';
+
+	if (x < 0) {
+		ret += ESC + (-x) + 'D';
+	} else if (x > 0) {
+		ret += ESC + x + 'C';
+	}
+
+	if (y < 0) {
+		ret += ESC + (-y) + 'A';
+	} else if (y > 0) {
+		ret += ESC + y + 'B';
+	}
+
+	return ret;
+};
+
+ansiEscapes.cursorUp = (count = 1) => ESC + count + 'A';
+ansiEscapes.cursorDown = (count = 1) => ESC + count + 'B';
+ansiEscapes.cursorForward = (count = 1) => ESC + count + 'C';
+ansiEscapes.cursorBackward = (count = 1) => ESC + count + 'D';
+
+ansiEscapes.cursorLeft = ESC + 'G';
+ansiEscapes.cursorSavePosition = isTerminalApp ? '\u001B7' : ESC + 's';
+ansiEscapes.cursorRestorePosition = isTerminalApp ? '\u001B8' : ESC + 'u';
+ansiEscapes.cursorGetPosition = ESC + '6n';
+ansiEscapes.cursorNextLine = ESC + 'E';
+ansiEscapes.cursorPrevLine = ESC + 'F';
+ansiEscapes.cursorHide = ESC + '?25l';
+ansiEscapes.cursorShow = ESC + '?25h';
+
+ansiEscapes.eraseLines = count => {
+	let clear = '';
+
+	for (let i = 0; i < count; i++) {
+		clear += ansiEscapes.eraseLine + (i < count - 1 ? ansiEscapes.cursorUp() : '');
+	}
+
+	if (count) {
+		clear += ansiEscapes.cursorLeft;
+	}
+
+	return clear;
+};
+
+ansiEscapes.eraseEndLine = ESC + 'K';
+ansiEscapes.eraseStartLine = ESC + '1K';
+ansiEscapes.eraseLine = ESC + '2K';
+ansiEscapes.eraseDown = ESC + 'J';
+ansiEscapes.eraseUp = ESC + '1J';
+ansiEscapes.eraseScreen = ESC + '2J';
+ansiEscapes.scrollUp = ESC + 'S';
+ansiEscapes.scrollDown = ESC + 'T';
+
+ansiEscapes.clearScreen = '\u001Bc';
+
+ansiEscapes.clearTerminal = process.platform === 'win32' ?
+	`${ansiEscapes.eraseScreen}${ESC}0f` :
+	// 1. Erases the screen (Only done in case `2` is not supported)
+	// 2. Erases the whole screen including scrollback buffer
+	// 3. Moves cursor to the top-left position
+	// More info: https://www.real-world-systems.com/docs/ANSIcode.html
+	`${ansiEscapes.eraseScreen}${ESC}3J${ESC}H`;
+
+ansiEscapes.beep = BEL;
+
+ansiEscapes.link = (text, url) => {
+	return [
+		OSC,
+		'8',
+		SEP,
+		SEP,
+		url,
+		BEL,
+		text,
+		OSC,
+		'8',
+		SEP,
+		SEP,
+		BEL
+	].join('');
+};
+
+ansiEscapes.image = (buffer, options = {}) => {
+	let ret = `${OSC}1337;File=inline=1`;
+
+	if (options.width) {
+		ret += `;width=${options.width}`;
+	}
+
+	if (options.height) {
+		ret += `;height=${options.height}`;
+	}
+
+	if (options.preserveAspectRatio === false) {
+		ret += ';preserveAspectRatio=0';
+	}
+
+	return ret + ':' + buffer.toString('base64') + BEL;
+};
+
+ansiEscapes.iTerm = {
+	setCwd: (cwd = process.cwd()) => `${OSC}50;CurrentDir=${cwd}${BEL}`,
+
+	annotation: (message, options = {}) => {
+		let ret = `${OSC}1337;`;
+
+		const hasX = typeof options.x !== 'undefined';
+		const hasY = typeof options.y !== 'undefined';
+		if ((hasX || hasY) && !(hasX && hasY && typeof options.length !== 'undefined')) {
+			throw new Error('`x`, `y` and `length` must be defined when `x` or `y` is defined');
+		}
+
+		message = message.replace(/\|/g, '');
+
+		ret += options.isHidden ? 'AddHiddenAnnotation=' : 'AddAnnotation=';
+
+		if (options.length > 0) {
+			ret +=
+					(hasX ?
+						[message, options.length, options.x, options.y] :
+						[options.length, message]).join('|');
+		} else {
+			ret += message;
+		}
+
+		return ret + BEL;
+	}
+};
 
 
 /***/ }),
 
-/***/ 334:
-/***/ (function(__unusedmodule, exports) {
+/***/ 2068:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+/* module decorator */ module = __nccwpck_require__.nmd(module);
+
+
+const ANSI_BACKGROUND_OFFSET = 10;
+
+const wrapAnsi256 = (offset = 0) => code => `\u001B[${38 + offset};5;${code}m`;
+
+const wrapAnsi16m = (offset = 0) => (red, green, blue) => `\u001B[${38 + offset};2;${red};${green};${blue}m`;
+
+function assembleStyles() {
+	const codes = new Map();
+	const styles = {
+		modifier: {
+			reset: [0, 0],
+			// 21 isn't widely supported and 22 does the same thing
+			bold: [1, 22],
+			dim: [2, 22],
+			italic: [3, 23],
+			underline: [4, 24],
+			overline: [53, 55],
+			inverse: [7, 27],
+			hidden: [8, 28],
+			strikethrough: [9, 29]
+		},
+		color: {
+			black: [30, 39],
+			red: [31, 39],
+			green: [32, 39],
+			yellow: [33, 39],
+			blue: [34, 39],
+			magenta: [35, 39],
+			cyan: [36, 39],
+			white: [37, 39],
+
+			// Bright color
+			blackBright: [90, 39],
+			redBright: [91, 39],
+			greenBright: [92, 39],
+			yellowBright: [93, 39],
+			blueBright: [94, 39],
+			magentaBright: [95, 39],
+			cyanBright: [96, 39],
+			whiteBright: [97, 39]
+		},
+		bgColor: {
+			bgBlack: [40, 49],
+			bgRed: [41, 49],
+			bgGreen: [42, 49],
+			bgYellow: [43, 49],
+			bgBlue: [44, 49],
+			bgMagenta: [45, 49],
+			bgCyan: [46, 49],
+			bgWhite: [47, 49],
+
+			// Bright color
+			bgBlackBright: [100, 49],
+			bgRedBright: [101, 49],
+			bgGreenBright: [102, 49],
+			bgYellowBright: [103, 49],
+			bgBlueBright: [104, 49],
+			bgMagentaBright: [105, 49],
+			bgCyanBright: [106, 49],
+			bgWhiteBright: [107, 49]
+		}
+	};
+
+	// Alias bright black as gray (and grey)
+	styles.color.gray = styles.color.blackBright;
+	styles.bgColor.bgGray = styles.bgColor.bgBlackBright;
+	styles.color.grey = styles.color.blackBright;
+	styles.bgColor.bgGrey = styles.bgColor.bgBlackBright;
+
+	for (const [groupName, group] of Object.entries(styles)) {
+		for (const [styleName, style] of Object.entries(group)) {
+			styles[styleName] = {
+				open: `\u001B[${style[0]}m`,
+				close: `\u001B[${style[1]}m`
+			};
+
+			group[styleName] = styles[styleName];
+
+			codes.set(style[0], style[1]);
+		}
+
+		Object.defineProperty(styles, groupName, {
+			value: group,
+			enumerable: false
+		});
+	}
+
+	Object.defineProperty(styles, 'codes', {
+		value: codes,
+		enumerable: false
+	});
+
+	styles.color.close = '\u001B[39m';
+	styles.bgColor.close = '\u001B[49m';
+
+	styles.color.ansi256 = wrapAnsi256();
+	styles.color.ansi16m = wrapAnsi16m();
+	styles.bgColor.ansi256 = wrapAnsi256(ANSI_BACKGROUND_OFFSET);
+	styles.bgColor.ansi16m = wrapAnsi16m(ANSI_BACKGROUND_OFFSET);
+
+	// From https://github.com/Qix-/color-convert/blob/3f0e0d4e92e235796ccb17f6e85c72094a651f49/conversions.js
+	Object.defineProperties(styles, {
+		rgbToAnsi256: {
+			value: (red, green, blue) => {
+				// We use the extended greyscale palette here, with the exception of
+				// black and white. normal palette only has 4 greyscale shades.
+				if (red === green && green === blue) {
+					if (red < 8) {
+						return 16;
+					}
+
+					if (red > 248) {
+						return 231;
+					}
+
+					return Math.round(((red - 8) / 247) * 24) + 232;
+				}
+
+				return 16 +
+					(36 * Math.round(red / 255 * 5)) +
+					(6 * Math.round(green / 255 * 5)) +
+					Math.round(blue / 255 * 5);
+			},
+			enumerable: false
+		},
+		hexToRgb: {
+			value: hex => {
+				const matches = /(?<colorString>[a-f\d]{6}|[a-f\d]{3})/i.exec(hex.toString(16));
+				if (!matches) {
+					return [0, 0, 0];
+				}
+
+				let {colorString} = matches.groups;
+
+				if (colorString.length === 3) {
+					colorString = colorString.split('').map(character => character + character).join('');
+				}
+
+				const integer = Number.parseInt(colorString, 16);
+
+				return [
+					(integer >> 16) & 0xFF,
+					(integer >> 8) & 0xFF,
+					integer & 0xFF
+				];
+			},
+			enumerable: false
+		},
+		hexToAnsi256: {
+			value: hex => styles.rgbToAnsi256(...styles.hexToRgb(hex)),
+			enumerable: false
+		}
+	});
+
+	return styles;
+}
+
+// Make the export immutable
+Object.defineProperty(module, 'exports', {
+	enumerable: true,
+	get: assembleStyles
+});
+
+
+/***/ }),
+
+/***/ 3682:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var register = __nccwpck_require__(4670)
+var addHook = __nccwpck_require__(5549)
+var removeHook = __nccwpck_require__(6819)
+
+// bind with array of arguments: https://stackoverflow.com/a/21792913
+var bind = Function.bind
+var bindable = bind.bind(bind)
+
+function bindApi (hook, state, name) {
+  var removeHookRef = bindable(removeHook, null).apply(null, name ? [state, name] : [state])
+  hook.api = { remove: removeHookRef }
+  hook.remove = removeHookRef
+
+  ;['before', 'error', 'after', 'wrap'].forEach(function (kind) {
+    var args = name ? [state, kind, name] : [state, kind]
+    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args)
+  })
+}
+
+function HookSingular () {
+  var singularHookName = 'h'
+  var singularHookState = {
+    registry: {}
+  }
+  var singularHook = register.bind(null, singularHookState, singularHookName)
+  bindApi(singularHook, singularHookState, singularHookName)
+  return singularHook
+}
+
+function HookCollection () {
+  var state = {
+    registry: {}
+  }
+
+  var hook = register.bind(null, state)
+  bindApi(hook, state)
+
+  return hook
+}
+
+var collectionHookDeprecationMessageDisplayed = false
+function Hook () {
+  if (!collectionHookDeprecationMessageDisplayed) {
+    console.warn('[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4')
+    collectionHookDeprecationMessageDisplayed = true
+  }
+  return HookCollection()
+}
+
+Hook.Singular = HookSingular.bind()
+Hook.Collection = HookCollection.bind()
+
+module.exports = Hook
+// expose constructors as a named property for TypeScript
+module.exports.Hook = Hook
+module.exports.Singular = Hook.Singular
+module.exports.Collection = Hook.Collection
+
+
+/***/ }),
+
+/***/ 5549:
+/***/ ((module) => {
+
+module.exports = addHook
+
+function addHook (state, kind, name, hook) {
+  var orig = hook
+  if (!state.registry[name]) {
+    state.registry[name] = []
+  }
+
+  if (kind === 'before') {
+    hook = function (method, options) {
+      return Promise.resolve()
+        .then(orig.bind(null, options))
+        .then(method.bind(null, options))
+    }
+  }
+
+  if (kind === 'after') {
+    hook = function (method, options) {
+      var result
+      return Promise.resolve()
+        .then(method.bind(null, options))
+        .then(function (result_) {
+          result = result_
+          return orig(result, options)
+        })
+        .then(function () {
+          return result
+        })
+    }
+  }
+
+  if (kind === 'error') {
+    hook = function (method, options) {
+      return Promise.resolve()
+        .then(method.bind(null, options))
+        .catch(function (error) {
+          return orig(error, options)
+        })
+    }
+  }
+
+  state.registry[name].push({
+    hook: hook,
+    orig: orig
+  })
+}
+
+
+/***/ }),
+
+/***/ 4670:
+/***/ ((module) => {
+
+module.exports = register
+
+function register (state, name, method, options) {
+  if (typeof method !== 'function') {
+    throw new Error('method for before hook must be a function')
+  }
+
+  if (!options) {
+    options = {}
+  }
+
+  if (Array.isArray(name)) {
+    return name.reverse().reduce(function (callback, name) {
+      return register.bind(null, state, name, callback, options)
+    }, method)()
+  }
+
+  return Promise.resolve()
+    .then(function () {
+      if (!state.registry[name]) {
+        return method(options)
+      }
+
+      return (state.registry[name]).reduce(function (method, registered) {
+        return registered.hook.bind(null, method, options)
+      }, method)()
+    })
+}
+
+
+/***/ }),
+
+/***/ 6819:
+/***/ ((module) => {
+
+module.exports = removeHook
+
+function removeHook (state, name, method) {
+  if (!state.registry[name]) {
+    return
+  }
+
+  var index = state.registry[name]
+    .map(function (registered) { return registered.orig })
+    .indexOf(method)
+
+  if (index === -1) {
+    return
+  }
+
+  state.registry[name].splice(index, 1)
+}
+
+
+/***/ }),
+
+/***/ 8932:
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
-async function auth(token) {
-  const tokenType = token.split(/\./).length === 3 ? "app" : /^v\d+\./.test(token) ? "installation" : "oauth";
-  return {
-    type: "token",
-    token: token,
-    tokenType
+class Deprecation extends Error {
+  constructor(message) {
+    super(message); // Maintains proper stack trace (only available on V8)
+
+    /* istanbul ignore next */
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+
+    this.name = 'Deprecation';
+  }
+
+}
+
+exports.Deprecation = Deprecation;
+
+
+/***/ }),
+
+/***/ 8840:
+/***/ ((module) => {
+
+"use strict";
+
+
+/*!
+ * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
+ *
+ * Copyright (c) 2014-2017, Jon Schlinkert.
+ * Released under the MIT License.
+ */
+
+function isObject(o) {
+  return Object.prototype.toString.call(o) === '[object Object]';
+}
+
+function isPlainObject(o) {
+  var ctor,prot;
+
+  if (isObject(o) === false) return false;
+
+  // If has modified constructor
+  ctor = o.constructor;
+  if (ctor === undefined) return true;
+
+  // If has modified prototype
+  prot = ctor.prototype;
+  if (isObject(prot) === false) return false;
+
+  // If constructor does not have an Object-specific method
+  if (prot.hasOwnProperty('isPrototypeOf') === false) {
+    return false;
+  }
+
+  // Most likely a plain Object
+  return true;
+}
+
+module.exports = isPlainObject;
+
+
+/***/ }),
+
+/***/ 1601:
+/***/ ((module) => {
+
+/**
+ * lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+
+/** Used as references for various `Number` constants. */
+var INFINITY = 1 / 0;
+
+/** `Object#toString` result references. */
+var symbolTag = '[object Symbol]';
+
+/** Used to match Latin Unicode letters (excluding mathematical operators). */
+var reLatin = /[\xc0-\xd6\xd8-\xf6\xf8-\xff\u0100-\u017f]/g;
+
+/** Used to compose unicode character classes. */
+var rsComboMarksRange = '\\u0300-\\u036f\\ufe20-\\ufe23',
+    rsComboSymbolsRange = '\\u20d0-\\u20f0';
+
+/** Used to compose unicode capture groups. */
+var rsCombo = '[' + rsComboMarksRange + rsComboSymbolsRange + ']';
+
+/**
+ * Used to match [combining diacritical marks](https://en.wikipedia.org/wiki/Combining_Diacritical_Marks) and
+ * [combining diacritical marks for symbols](https://en.wikipedia.org/wiki/Combining_Diacritical_Marks_for_Symbols).
+ */
+var reComboMark = RegExp(rsCombo, 'g');
+
+/** Used to map Latin Unicode letters to basic Latin letters. */
+var deburredLetters = {
+  // Latin-1 Supplement block.
+  '\xc0': 'A',  '\xc1': 'A', '\xc2': 'A', '\xc3': 'A', '\xc4': 'A', '\xc5': 'A',
+  '\xe0': 'a',  '\xe1': 'a', '\xe2': 'a', '\xe3': 'a', '\xe4': 'a', '\xe5': 'a',
+  '\xc7': 'C',  '\xe7': 'c',
+  '\xd0': 'D',  '\xf0': 'd',
+  '\xc8': 'E',  '\xc9': 'E', '\xca': 'E', '\xcb': 'E',
+  '\xe8': 'e',  '\xe9': 'e', '\xea': 'e', '\xeb': 'e',
+  '\xcc': 'I',  '\xcd': 'I', '\xce': 'I', '\xcf': 'I',
+  '\xec': 'i',  '\xed': 'i', '\xee': 'i', '\xef': 'i',
+  '\xd1': 'N',  '\xf1': 'n',
+  '\xd2': 'O',  '\xd3': 'O', '\xd4': 'O', '\xd5': 'O', '\xd6': 'O', '\xd8': 'O',
+  '\xf2': 'o',  '\xf3': 'o', '\xf4': 'o', '\xf5': 'o', '\xf6': 'o', '\xf8': 'o',
+  '\xd9': 'U',  '\xda': 'U', '\xdb': 'U', '\xdc': 'U',
+  '\xf9': 'u',  '\xfa': 'u', '\xfb': 'u', '\xfc': 'u',
+  '\xdd': 'Y',  '\xfd': 'y', '\xff': 'y',
+  '\xc6': 'Ae', '\xe6': 'ae',
+  '\xde': 'Th', '\xfe': 'th',
+  '\xdf': 'ss',
+  // Latin Extended-A block.
+  '\u0100': 'A',  '\u0102': 'A', '\u0104': 'A',
+  '\u0101': 'a',  '\u0103': 'a', '\u0105': 'a',
+  '\u0106': 'C',  '\u0108': 'C', '\u010a': 'C', '\u010c': 'C',
+  '\u0107': 'c',  '\u0109': 'c', '\u010b': 'c', '\u010d': 'c',
+  '\u010e': 'D',  '\u0110': 'D', '\u010f': 'd', '\u0111': 'd',
+  '\u0112': 'E',  '\u0114': 'E', '\u0116': 'E', '\u0118': 'E', '\u011a': 'E',
+  '\u0113': 'e',  '\u0115': 'e', '\u0117': 'e', '\u0119': 'e', '\u011b': 'e',
+  '\u011c': 'G',  '\u011e': 'G', '\u0120': 'G', '\u0122': 'G',
+  '\u011d': 'g',  '\u011f': 'g', '\u0121': 'g', '\u0123': 'g',
+  '\u0124': 'H',  '\u0126': 'H', '\u0125': 'h', '\u0127': 'h',
+  '\u0128': 'I',  '\u012a': 'I', '\u012c': 'I', '\u012e': 'I', '\u0130': 'I',
+  '\u0129': 'i',  '\u012b': 'i', '\u012d': 'i', '\u012f': 'i', '\u0131': 'i',
+  '\u0134': 'J',  '\u0135': 'j',
+  '\u0136': 'K',  '\u0137': 'k', '\u0138': 'k',
+  '\u0139': 'L',  '\u013b': 'L', '\u013d': 'L', '\u013f': 'L', '\u0141': 'L',
+  '\u013a': 'l',  '\u013c': 'l', '\u013e': 'l', '\u0140': 'l', '\u0142': 'l',
+  '\u0143': 'N',  '\u0145': 'N', '\u0147': 'N', '\u014a': 'N',
+  '\u0144': 'n',  '\u0146': 'n', '\u0148': 'n', '\u014b': 'n',
+  '\u014c': 'O',  '\u014e': 'O', '\u0150': 'O',
+  '\u014d': 'o',  '\u014f': 'o', '\u0151': 'o',
+  '\u0154': 'R',  '\u0156': 'R', '\u0158': 'R',
+  '\u0155': 'r',  '\u0157': 'r', '\u0159': 'r',
+  '\u015a': 'S',  '\u015c': 'S', '\u015e': 'S', '\u0160': 'S',
+  '\u015b': 's',  '\u015d': 's', '\u015f': 's', '\u0161': 's',
+  '\u0162': 'T',  '\u0164': 'T', '\u0166': 'T',
+  '\u0163': 't',  '\u0165': 't', '\u0167': 't',
+  '\u0168': 'U',  '\u016a': 'U', '\u016c': 'U', '\u016e': 'U', '\u0170': 'U', '\u0172': 'U',
+  '\u0169': 'u',  '\u016b': 'u', '\u016d': 'u', '\u016f': 'u', '\u0171': 'u', '\u0173': 'u',
+  '\u0174': 'W',  '\u0175': 'w',
+  '\u0176': 'Y',  '\u0177': 'y', '\u0178': 'Y',
+  '\u0179': 'Z',  '\u017b': 'Z', '\u017d': 'Z',
+  '\u017a': 'z',  '\u017c': 'z', '\u017e': 'z',
+  '\u0132': 'IJ', '\u0133': 'ij',
+  '\u0152': 'Oe', '\u0153': 'oe',
+  '\u0149': "'n", '\u017f': 'ss'
+};
+
+/** Detect free variable `global` from Node.js. */
+var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+
+/** Detect free variable `self`. */
+var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+/** Used as a reference to the global object. */
+var root = freeGlobal || freeSelf || Function('return this')();
+
+/**
+ * The base implementation of `_.propertyOf` without support for deep paths.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Function} Returns the new accessor function.
+ */
+function basePropertyOf(object) {
+  return function(key) {
+    return object == null ? undefined : object[key];
   };
 }
 
 /**
- * Prefix token for usage in the Authorization header
+ * Used by `_.deburr` to convert Latin-1 Supplement and Latin Extended-A
+ * letters to basic Latin letters.
  *
- * @param token OAuth token or JSON Web Token
+ * @private
+ * @param {string} letter The matched letter to deburr.
+ * @returns {string} Returns the deburred letter.
  */
-function withAuthorizationPrefix(token) {
-  if (token.split(/\./).length === 3) {
-    return `bearer ${token}`;
-  }
+var deburrLetter = basePropertyOf(deburredLetters);
 
-  return `token ${token}`;
-}
+/** Used for built-in method references. */
+var objectProto = Object.prototype;
 
-async function hook(token, request, route, parameters) {
-  const endpoint = request.endpoint.merge(route, parameters);
-  endpoint.headers.authorization = withAuthorizationPrefix(token);
-  return request(endpoint);
-}
-
-const createTokenAuth = function createTokenAuth(token) {
-  if (!token) {
-    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
-  }
-
-  if (typeof token !== "string") {
-    throw new Error("[@octokit/auth-token] Token passed to createTokenAuth is not a string");
-  }
-
-  token = token.replace(/^(token|bearer) +/i, "");
-  return Object.assign(auth.bind(null, token), {
-    hook: hook.bind(null, token)
-  });
-};
-
-exports.createTokenAuth = createTokenAuth;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 351:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const os = __importStar(__webpack_require__(87));
 /**
- * Commands
- *
- * Command Format:
- *   ::name key=value,key=value::message
- *
- * Examples:
- *   ::warning::This is the message
- *   ::set-env name=MY_VAR::some value
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
  */
-function issueCommand(command, properties, message) {
-    const cmd = new Command(command, properties, message);
-    process.stdout.write(cmd.toString() + os.EOL);
-}
-exports.issueCommand = issueCommand;
-function issue(name, message = '') {
-    issueCommand(name, {}, message);
-}
-exports.issue = issue;
-const CMD_STRING = '::';
-class Command {
-    constructor(command, properties, message) {
-        if (!command) {
-            command = 'missing.command';
-        }
-        this.command = command;
-        this.properties = properties;
-        this.message = message;
-    }
-    toString() {
-        let cmdStr = CMD_STRING + this.command;
-        if (this.properties && Object.keys(this.properties).length > 0) {
-            cmdStr += ' ';
-            let first = true;
-            for (const key in this.properties) {
-                if (this.properties.hasOwnProperty(key)) {
-                    const val = this.properties[key];
-                    if (val) {
-                        if (first) {
-                            first = false;
-                        }
-                        else {
-                            cmdStr += ',';
-                        }
-                        cmdStr += `${key}=${escapeProperty(val)}`;
-                    }
-                }
-            }
-        }
-        cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
-        return cmdStr;
-    }
-}
+var objectToString = objectProto.toString;
+
+/** Built-in value references. */
+var Symbol = root.Symbol;
+
+/** Used to convert symbols to primitives and strings. */
+var symbolProto = Symbol ? Symbol.prototype : undefined,
+    symbolToString = symbolProto ? symbolProto.toString : undefined;
+
 /**
- * Sanitizes an input into a string so it can be passed into issueCommand safely
- * @param input input to sanitize into a string
- */
-function toCommandValue(input) {
-    if (input === null || input === undefined) {
-        return '';
-    }
-    else if (typeof input === 'string' || input instanceof String) {
-        return input;
-    }
-    return JSON.stringify(input);
-}
-exports.toCommandValue = toCommandValue;
-function escapeData(s) {
-    return toCommandValue(s)
-        .replace(/%/g, '%25')
-        .replace(/\r/g, '%0D')
-        .replace(/\n/g, '%0A');
-}
-function escapeProperty(s) {
-    return toCommandValue(s)
-        .replace(/%/g, '%25')
-        .replace(/\r/g, '%0D')
-        .replace(/\n/g, '%0A')
-        .replace(/:/g, '%3A')
-        .replace(/,/g, '%2C');
-}
-//# sourceMappingURL=command.js.map
-
-/***/ }),
-
-/***/ 357:
-/***/ (function(module) {
-
-module.exports = require("assert");
-
-/***/ }),
-
-/***/ 407:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.IssueProcessor = void 0;
-const core = __importStar(__webpack_require__(186));
-const github_1 = __webpack_require__(438);
-/***
- * Handle processing of issues for staleness/closure.
- */
-class IssueProcessor {
-    constructor(options, getIssues, listIssueComments, getLabelCreationDate) {
-        this.operationsLeft = 0;
-        this.staleIssues = [];
-        this.closedIssues = [];
-        this.removedLabelIssues = [];
-        this.options = options;
-        this.operationsLeft = options.operationsPerRun;
-        this.client = github_1.getOctokit(options.repoToken);
-        if (getIssues) {
-            this.getIssues = getIssues;
-        }
-        if (listIssueComments) {
-            this.listIssueComments = listIssueComments;
-        }
-        if (getLabelCreationDate) {
-            this.getLabelCreationDate = getLabelCreationDate;
-        }
-        if (this.options.debugOnly) {
-            core.warning('Executing in debug mode. Debug output will be written but no issues will be processed.');
-        }
-    }
-    processIssues(page = 1) {
-        return __awaiter(this, void 0, void 0, function* () {
-            // get the next batch of issues
-            const issues = yield this.getIssues(page);
-            this.operationsLeft -= 1;
-            if (issues.length <= 0) {
-                core.info('No more issues found to process. Exiting.');
-                return this.operationsLeft;
-            }
-            for (const issue of issues.values()) {
-                const isPr = !!issue.pull_request;
-                core.info(`Found issue: issue #${issue.number} - ${issue.title} last updated ${issue.updated_at} (is pr? ${isPr})`);
-                // calculate string based messages for this issue
-                const staleMessage = isPr
-                    ? this.options.stalePrMessage
-                    : this.options.staleIssueMessage;
-                const closeMessage = isPr
-                    ? this.options.closePrMessage
-                    : this.options.closeIssueMessage;
-                const staleLabel = isPr
-                    ? this.options.stalePrLabel
-                    : this.options.staleIssueLabel;
-                const closeLabel = isPr
-                    ? this.options.closePrLabel
-                    : this.options.closeIssueLabel;
-                const exemptLabels = IssueProcessor.parseCommaSeparatedString(isPr ? this.options.exemptPrLabels : this.options.exemptIssueLabels);
-                const skipMessage = isPr
-                    ? this.options.skipStalePrMessage
-                    : this.options.skipStaleIssueMessage;
-                const issueType = isPr ? 'pr' : 'issue';
-                const shouldMarkWhenStale = this.options.daysBeforeStale > -1;
-                if (!staleMessage && shouldMarkWhenStale) {
-                    core.info(`Skipping ${issueType} due to empty stale message`);
-                    continue;
-                }
-                if (issue.state === 'closed') {
-                    core.info(`Skipping ${issueType} because it is closed`);
-                    continue; // don't process closed issues
-                }
-                if (issue.locked) {
-                    core.info(`Skipping ${issueType} because it is locked`);
-                    continue; // don't process locked issues
-                }
-                if (exemptLabels.some((exemptLabel) => IssueProcessor.isLabeled(issue, exemptLabel))) {
-                    core.info(`Skipping ${issueType} because it has an exempt label`);
-                    continue; // don't process exempt issues
-                }
-                // does this issue have a stale label?
-                let isStale = IssueProcessor.isLabeled(issue, staleLabel);
-                // should this issue be marked stale?
-                const shouldBeStale = !IssueProcessor.updatedSince(issue.updated_at, this.options.daysBeforeStale);
-                // determine if this issue needs to be marked stale first
-                if (!isStale && shouldBeStale && shouldMarkWhenStale) {
-                    core.info(`Marking ${issueType} stale because it was last updated on ${issue.updated_at} and it does not have a stale label`);
-                    yield this.markStale(issue, staleMessage, staleLabel, skipMessage);
-                    isStale = true; // this issue is now considered stale
-                }
-                // process the issue if it was marked stale
-                if (isStale) {
-                    core.info(`Found a stale ${issueType}`);
-                    yield this.processStaleIssue(issue, issueType, staleLabel, closeMessage, closeLabel);
-                }
-            }
-            if (this.operationsLeft <= 0) {
-                core.warning('Reached max number of operations to process. Exiting.');
-                return 0;
-            }
-            // do the next batch
-            return this.processIssues(page + 1);
-        });
-    }
-    // handle all of the stale issue logic when we find a stale issue
-    processStaleIssue(issue, issueType, staleLabel, closeMessage, closeLabel) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const markedStaleOn = (yield this.getLabelCreationDate(issue, staleLabel)) || issue.updated_at;
-            core.info(`Issue #${issue.number} marked stale on: ${markedStaleOn}`);
-            const issueHasComments = yield this.hasCommentsSince(issue, markedStaleOn);
-            core.info(`Issue #${issue.number} has been commented on: ${issueHasComments}`);
-            const issueHasUpdate = IssueProcessor.updatedSince(issue.updated_at, this.options.daysBeforeClose);
-            core.info(`Issue #${issue.number} has been updated: ${issueHasUpdate}`);
-            // should we un-stale this issue?
-            if (this.options.removeStaleWhenUpdated && issueHasComments) {
-                core.info(`Issue #${issue.number} is no longer stale. Removing stale label.`);
-                yield this.removeLabel(issue, staleLabel);
-            }
-            // now start closing logic
-            if (this.options.daysBeforeClose < 0) {
-                return; // nothing to do because we aren't closing stale issues
-            }
-            if (!issueHasComments && !issueHasUpdate) {
-                core.info(`Closing ${issueType} because it was last updated on ${issue.updated_at}`);
-                yield this.closeIssue(issue, closeMessage, closeLabel);
-            }
-            else {
-                core.info(`Stale ${issueType} is not old enough to close yet (hasComments? ${issueHasComments}, hasUpdate? ${issueHasUpdate}`);
-            }
-        });
-    }
-    // checks to see if a given issue is still stale (has had activity on it)
-    hasCommentsSince(issue, sinceDate) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.info(`Checking for comments on issue #${issue.number} since ${sinceDate}`);
-            if (!sinceDate) {
-                return true;
-            }
-            // find any comments since the date
-            const comments = yield this.listIssueComments(issue.number, sinceDate);
-            const filteredComments = comments.filter(comment => comment.user.type === 'User' && comment.user.login !== github_1.context.actor);
-            core.info(`Comments not made by ${github_1.context.actor} or another bot: ${filteredComments.length}`);
-            // if there are any user comments returned
-            return filteredComments.length > 0;
-        });
-    }
-    // grab comments for an issue since a given date
-    listIssueComments(issueNumber, sinceDate) {
-        return __awaiter(this, void 0, void 0, function* () {
-            // find any comments since date on the given issue
-            try {
-                const comments = yield this.client.issues.listComments({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: issueNumber,
-                    since: sinceDate
-                });
-                return comments.data;
-            }
-            catch (error) {
-                core.error(`List issue comments error: ${error.message}`);
-                return Promise.resolve([]);
-            }
-        });
-    }
-    // grab issues from github in baches of 100
-    getIssues(page) {
-        return __awaiter(this, void 0, void 0, function* () {
-            // generate type for response
-            const endpoint = this.client.issues.listForRepo;
-            try {
-                const issueResult = yield this.client.issues.listForRepo({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    state: 'open',
-                    labels: this.options.onlyLabels,
-                    per_page: 100,
-                    direction: this.options.ascending ? 'asc' : 'desc',
-                    page
-                });
-                return issueResult.data;
-            }
-            catch (error) {
-                core.error(`Get issues for repo error: ${error.message}`);
-                return Promise.resolve([]);
-            }
-        });
-    }
-    // Mark an issue as stale with a comment and a label
-    markStale(issue, staleMessage, staleLabel, skipMessage) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.info(`Marking issue #${issue.number} - ${issue.title} as stale`);
-            this.staleIssues.push(issue);
-            this.operationsLeft -= 2;
-            // if the issue is being marked stale, the updated date should be changed to right now
-            // so that close calculations work correctly
-            const newUpdatedAtDate = new Date();
-            issue.updated_at = newUpdatedAtDate.toString();
-            if (this.options.debugOnly) {
-                return;
-            }
-            if (!skipMessage) {
-                try {
-                    yield this.client.issues.createComment({
-                        owner: github_1.context.repo.owner,
-                        repo: github_1.context.repo.repo,
-                        issue_number: issue.number,
-                        body: staleMessage
-                    });
-                }
-                catch (error) {
-                    core.error(`Error creating a comment: ${error.message}`);
-                }
-            }
-            try {
-                yield this.client.issues.addLabels({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: issue.number,
-                    labels: [staleLabel]
-                });
-            }
-            catch (error) {
-                core.error(`Error adding a label: ${error.message}`);
-            }
-        });
-    }
-    // Close an issue based on staleness
-    closeIssue(issue, closeMessage, closeLabel) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.info(`Closing issue #${issue.number} - ${issue.title} for being stale`);
-            this.closedIssues.push(issue);
-            this.operationsLeft -= 1;
-            if (this.options.debugOnly) {
-                return;
-            }
-            if (closeMessage) {
-                try {
-                    yield this.client.issues.createComment({
-                        owner: github_1.context.repo.owner,
-                        repo: github_1.context.repo.repo,
-                        issue_number: issue.number,
-                        body: closeMessage
-                    });
-                }
-                catch (error) {
-                    core.error(`Error creating a comment: ${error.message}`);
-                }
-            }
-            if (closeLabel) {
-                try {
-                    yield this.client.issues.addLabels({
-                        owner: github_1.context.repo.owner,
-                        repo: github_1.context.repo.repo,
-                        issue_number: issue.number,
-                        labels: [closeLabel]
-                    });
-                }
-                catch (error) {
-                    core.error(`Error adding a label: ${error.message}`);
-                }
-            }
-            try {
-                yield this.client.issues.update({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: issue.number,
-                    state: 'closed'
-                });
-            }
-            catch (error) {
-                core.error(`Error updating an issue: ${error.message}`);
-            }
-        });
-    }
-    // Remove a label from an issue
-    removeLabel(issue, label) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.info(`Removing label ${label} from issue #${issue.number} - ${issue.title}`);
-            this.removedLabelIssues.push(issue);
-            this.operationsLeft -= 1;
-            if (this.options.debugOnly) {
-                return;
-            }
-            try {
-                yield this.client.issues.removeLabel({
-                    owner: github_1.context.repo.owner,
-                    repo: github_1.context.repo.repo,
-                    issue_number: issue.number,
-                    name: encodeURIComponent(label) // A label can have a "?" in the name
-                });
-            }
-            catch (error) {
-                core.error(`Error removing a label: ${error.message}`);
-            }
-        });
-    }
-    // returns the creation date of a given label on an issue (or nothing if no label existed)
-    ///see https://developer.github.com/v3/activity/events/
-    getLabelCreationDate(issue, label) {
-        return __awaiter(this, void 0, void 0, function* () {
-            core.info(`Checking for label ${label} on issue #${issue.number}`);
-            this.operationsLeft -= 1;
-            const options = this.client.issues.listEvents.endpoint.merge({
-                owner: github_1.context.repo.owner,
-                repo: github_1.context.repo.repo,
-                per_page: 100,
-                issue_number: issue.number
-            });
-            const events = yield this.client.paginate(options);
-            const reversedEvents = events.reverse();
-            const staleLabeledEvent = reversedEvents.find(event => event.event === 'labeled' && event.label.name === label);
-            if (!staleLabeledEvent) {
-                // Must be old rather than labeled
-                return undefined;
-            }
-            return staleLabeledEvent.created_at;
-        });
-    }
-    static isLabeled(issue, label) {
-        const labelComparer = l => label.localeCompare(l.name, undefined, { sensitivity: 'accent' }) === 0;
-        return issue.labels.filter(labelComparer).length > 0;
-    }
-    static updatedSince(timestamp, num_days) {
-        const daysInMillis = 1000 * 60 * 60 * 24 * num_days;
-        const millisSinceLastUpdated = new Date().getTime() - new Date(timestamp).getTime();
-        return millisSinceLastUpdated <= daysInMillis;
-    }
-    static parseCommaSeparatedString(s) {
-        // String.prototype.split defaults to [''] when called on an empty string
-        // In this case, we'd prefer to just return an empty array indicating no labels
-        if (!s.length)
-            return [];
-        return s.split(',').map(l => l.trim());
-    }
-}
-exports.IssueProcessor = IssueProcessor;
-
-
-/***/ }),
-
-/***/ 413:
-/***/ (function(module) {
-
-module.exports = require("stream");
-
-/***/ }),
-
-/***/ 429:
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function getUserAgent() {
-  if (typeof navigator === "object" && "userAgent" in navigator) {
-    return navigator.userAgent;
-  }
-
-  if (typeof process === "object" && "version" in process) {
-    return `Node.js/${process.version.substr(1)} (${process.platform}; ${process.arch})`;
-  }
-
-  return "<environment undetectable>";
-}
-
-exports.getUserAgent = getUserAgent;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 438:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOctokit = exports.context = void 0;
-const Context = __importStar(__webpack_require__(53));
-const utils_1 = __webpack_require__(30);
-exports.context = new Context.Context();
-/**
- * Returns a hydrated octokit ready to use for GitHub Actions
+ * The base implementation of `_.toString` which doesn't convert nullish
+ * values to empty strings.
  *
- * @param     token    the repo PAT or GITHUB_TOKEN
- * @param     options  other options to set
+ * @private
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
  */
-function getOctokit(token, options) {
-    return new utils_1.GitHub(utils_1.getOctokitOptions(token, options));
-}
-exports.getOctokit = getOctokit;
-//# sourceMappingURL=github.js.map
-
-/***/ }),
-
-/***/ 440:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var isPlainObject = _interopDefault(__webpack_require__(840));
-var universalUserAgent = __webpack_require__(429);
-
-function lowercaseKeys(object) {
-  if (!object) {
-    return {};
-  }
-
-  return Object.keys(object).reduce((newObj, key) => {
-    newObj[key.toLowerCase()] = object[key];
-    return newObj;
-  }, {});
-}
-
-function mergeDeep(defaults, options) {
-  const result = Object.assign({}, defaults);
-  Object.keys(options).forEach(key => {
-    if (isPlainObject(options[key])) {
-      if (!(key in defaults)) Object.assign(result, {
-        [key]: options[key]
-      });else result[key] = mergeDeep(defaults[key], options[key]);
-    } else {
-      Object.assign(result, {
-        [key]: options[key]
-      });
-    }
-  });
-  return result;
-}
-
-function merge(defaults, route, options) {
-  if (typeof route === "string") {
-    let [method, url] = route.split(" ");
-    options = Object.assign(url ? {
-      method,
-      url
-    } : {
-      url: method
-    }, options);
-  } else {
-    options = Object.assign({}, route);
-  } // lowercase header names before merging with defaults to avoid duplicates
-
-
-  options.headers = lowercaseKeys(options.headers);
-  const mergedOptions = mergeDeep(defaults || {}, options); // mediaType.previews arrays are merged, instead of overwritten
-
-  if (defaults && defaults.mediaType.previews.length) {
-    mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(preview => !mergedOptions.mediaType.previews.includes(preview)).concat(mergedOptions.mediaType.previews);
-  }
-
-  mergedOptions.mediaType.previews = mergedOptions.mediaType.previews.map(preview => preview.replace(/-preview/, ""));
-  return mergedOptions;
-}
-
-function addQueryParameters(url, parameters) {
-  const separator = /\?/.test(url) ? "&" : "?";
-  const names = Object.keys(parameters);
-
-  if (names.length === 0) {
-    return url;
-  }
-
-  return url + separator + names.map(name => {
-    if (name === "q") {
-      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
-    }
-
-    return `${name}=${encodeURIComponent(parameters[name])}`;
-  }).join("&");
-}
-
-const urlVariableRegex = /\{[^}]+\}/g;
-
-function removeNonChars(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
-}
-
-function extractUrlVariableNames(url) {
-  const matches = url.match(urlVariableRegex);
-
-  if (!matches) {
-    return [];
-  }
-
-  return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
-}
-
-function omit(object, keysToOmit) {
-  return Object.keys(object).filter(option => !keysToOmit.includes(option)).reduce((obj, key) => {
-    obj[key] = object[key];
-    return obj;
-  }, {});
-}
-
-// Based on https://github.com/bramstein/url-template, licensed under BSD
-// TODO: create separate package.
-//
-// Copyright (c) 2012-2014, Bram Stein
-// All rights reserved.
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  1. Redistributions of source code must retain the above copyright
-//     notice, this list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright
-//     notice, this list of conditions and the following disclaimer in the
-//     documentation and/or other materials provided with the distribution.
-//  3. The name of the author may not be used to endorse or promote products
-//     derived from this software without specific prior written permission.
-// THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
-// EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-// BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-// EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-/* istanbul ignore file */
-function encodeReserved(str) {
-  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function (part) {
-    if (!/%[0-9A-Fa-f]/.test(part)) {
-      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
-    }
-
-    return part;
-  }).join("");
-}
-
-function encodeUnreserved(str) {
-  return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
-    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
-  });
-}
-
-function encodeValue(operator, value, key) {
-  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
-
-  if (key) {
-    return encodeUnreserved(key) + "=" + value;
-  } else {
+function baseToString(value) {
+  // Exit early for strings to avoid a performance hit in some environments.
+  if (typeof value == 'string') {
     return value;
   }
-}
-
-function isDefined(value) {
-  return value !== undefined && value !== null;
-}
-
-function isKeyOperator(operator) {
-  return operator === ";" || operator === "&" || operator === "?";
-}
-
-function getValues(context, operator, key, modifier) {
-  var value = context[key],
-      result = [];
-
-  if (isDefined(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      value = value.toString();
-
-      if (modifier && modifier !== "*") {
-        value = value.substring(0, parseInt(modifier, 10));
-      }
-
-      result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
-    } else {
-      if (modifier === "*") {
-        if (Array.isArray(value)) {
-          value.filter(isDefined).forEach(function (value) {
-            result.push(encodeValue(operator, value, isKeyOperator(operator) ? key : ""));
-          });
-        } else {
-          Object.keys(value).forEach(function (k) {
-            if (isDefined(value[k])) {
-              result.push(encodeValue(operator, value[k], k));
-            }
-          });
-        }
-      } else {
-        const tmp = [];
-
-        if (Array.isArray(value)) {
-          value.filter(isDefined).forEach(function (value) {
-            tmp.push(encodeValue(operator, value));
-          });
-        } else {
-          Object.keys(value).forEach(function (k) {
-            if (isDefined(value[k])) {
-              tmp.push(encodeUnreserved(k));
-              tmp.push(encodeValue(operator, value[k].toString()));
-            }
-          });
-        }
-
-        if (isKeyOperator(operator)) {
-          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
-        } else if (tmp.length !== 0) {
-          result.push(tmp.join(","));
-        }
-      }
-    }
-  } else {
-    if (operator === ";") {
-      if (isDefined(value)) {
-        result.push(encodeUnreserved(key));
-      }
-    } else if (value === "" && (operator === "&" || operator === "?")) {
-      result.push(encodeUnreserved(key) + "=");
-    } else if (value === "") {
-      result.push("");
-    }
+  if (isSymbol(value)) {
+    return symbolToString ? symbolToString.call(value) : '';
   }
-
-  return result;
+  var result = (value + '');
+  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
 }
 
-function parseUrl(template) {
-  return {
-    expand: expand.bind(null, template)
-  };
+/**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+function isObjectLike(value) {
+  return !!value && typeof value == 'object';
 }
 
-function expand(template, context) {
-  var operators = ["+", "#", ".", "/", ";", "?", "&"];
-  return template.replace(/\{([^\{\}]+)\}|([^\{\}]+)/g, function (_, expression, literal) {
-    if (expression) {
-      let operator = "";
-      const values = [];
-
-      if (operators.indexOf(expression.charAt(0)) !== -1) {
-        operator = expression.charAt(0);
-        expression = expression.substr(1);
-      }
-
-      expression.split(/,/g).forEach(function (variable) {
-        var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
-        values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
-      });
-
-      if (operator && operator !== "+") {
-        var separator = ",";
-
-        if (operator === "?") {
-          separator = "&";
-        } else if (operator !== "#") {
-          separator = operator;
-        }
-
-        return (values.length !== 0 ? operator : "") + values.join(separator);
-      } else {
-        return values.join(",");
-      }
-    } else {
-      return encodeReserved(literal);
-    }
-  });
+/**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
+function isSymbol(value) {
+  return typeof value == 'symbol' ||
+    (isObjectLike(value) && objectToString.call(value) == symbolTag);
 }
 
-function parse(options) {
-  // https://fetch.spec.whatwg.org/#methods
-  let method = options.method.toUpperCase(); // replace :varname with {varname} to make it RFC 6570 compatible
-
-  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{+$1}");
-  let headers = Object.assign({}, options.headers);
-  let body;
-  let parameters = omit(options, ["method", "baseUrl", "url", "headers", "request", "mediaType"]); // extract variable names from URL to calculate remaining variables later
-
-  const urlVariableNames = extractUrlVariableNames(url);
-  url = parseUrl(url).expand(parameters);
-
-  if (!/^http/.test(url)) {
-    url = options.baseUrl + url;
-  }
-
-  const omittedParameters = Object.keys(options).filter(option => urlVariableNames.includes(option)).concat("baseUrl");
-  const remainingParameters = omit(parameters, omittedParameters);
-  const isBinaryRequset = /application\/octet-stream/i.test(headers.accept);
-
-  if (!isBinaryRequset) {
-    if (options.mediaType.format) {
-      // e.g. application/vnd.github.v3+json => application/vnd.github.v3.raw
-      headers.accept = headers.accept.split(/,/).map(preview => preview.replace(/application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/, `application/vnd$1$2.${options.mediaType.format}`)).join(",");
-    }
-
-    if (options.mediaType.previews.length) {
-      const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
-      headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map(preview => {
-        const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
-        return `application/vnd.github.${preview}-preview${format}`;
-      }).join(",");
-    }
-  } // for GET/HEAD requests, set URL query parameters from remaining parameters
-  // for PATCH/POST/PUT/DELETE requests, set request body from remaining parameters
-
-
-  if (["GET", "HEAD"].includes(method)) {
-    url = addQueryParameters(url, remainingParameters);
-  } else {
-    if ("data" in remainingParameters) {
-      body = remainingParameters.data;
-    } else {
-      if (Object.keys(remainingParameters).length) {
-        body = remainingParameters;
-      } else {
-        headers["content-length"] = 0;
-      }
-    }
-  } // default content-type for JSON if body is set
-
-
-  if (!headers["content-type"] && typeof body !== "undefined") {
-    headers["content-type"] = "application/json; charset=utf-8";
-  } // GitHub expects 'content-length: 0' header for PUT/PATCH requests without body.
-  // fetch does not allow to set `content-length` header, but we can set body to an empty string
-
-
-  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
-    body = "";
-  } // Only return body/request keys if present
-
-
-  return Object.assign({
-    method,
-    url,
-    headers
-  }, typeof body !== "undefined" ? {
-    body
-  } : null, options.request ? {
-    request: options.request
-  } : null);
+/**
+ * Converts `value` to a string. An empty string is returned for `null`
+ * and `undefined` values. The sign of `-0` is preserved.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
+ * @example
+ *
+ * _.toString(null);
+ * // => ''
+ *
+ * _.toString(-0);
+ * // => '-0'
+ *
+ * _.toString([1, 2, 3]);
+ * // => '1,2,3'
+ */
+function toString(value) {
+  return value == null ? '' : baseToString(value);
 }
 
-function endpointWithDefaults(defaults, route, options) {
-  return parse(merge(defaults, route, options));
+/**
+ * Deburrs `string` by converting
+ * [Latin-1 Supplement](https://en.wikipedia.org/wiki/Latin-1_Supplement_(Unicode_block)#Character_table)
+ * and [Latin Extended-A](https://en.wikipedia.org/wiki/Latin_Extended-A)
+ * letters to basic Latin letters and removing
+ * [combining diacritical marks](https://en.wikipedia.org/wiki/Combining_Diacritical_Marks).
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category String
+ * @param {string} [string=''] The string to deburr.
+ * @returns {string} Returns the deburred string.
+ * @example
+ *
+ * _.deburr('déjà vu');
+ * // => 'deja vu'
+ */
+function deburr(string) {
+  string = toString(string);
+  return string && string.replace(reLatin, deburrLetter).replace(reComboMark, '');
 }
 
-function withDefaults(oldDefaults, newDefaults) {
-  const DEFAULTS = merge(oldDefaults, newDefaults);
-  const endpoint = endpointWithDefaults.bind(null, DEFAULTS);
-  return Object.assign(endpoint, {
-    DEFAULTS,
-    defaults: withDefaults.bind(null, DEFAULTS),
-    merge: merge.bind(null, DEFAULTS),
-    parse
-  });
-}
-
-const VERSION = "6.0.5";
-
-const userAgent = `octokit-endpoint.js/${VERSION} ${universalUserAgent.getUserAgent()}`; // DEFAULTS has all properties set that EndpointOptions has, except url.
-// So we use RequestParameters and add method as additional required property.
-
-const DEFAULTS = {
-  method: "GET",
-  baseUrl: "https://api.github.com",
-  headers: {
-    accept: "application/vnd.github.v3+json",
-    "user-agent": userAgent
-  },
-  mediaType: {
-    format: "",
-    previews: []
-  }
-};
-
-const endpoint = withDefaults(null, DEFAULTS);
-
-exports.endpoint = endpoint;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 443:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-const url = __webpack_require__(835);
-function getProxyUrl(reqUrl) {
-    let usingSsl = reqUrl.protocol === 'https:';
-    let proxyUrl;
-    if (checkBypass(reqUrl)) {
-        return proxyUrl;
-    }
-    let proxyVar;
-    if (usingSsl) {
-        proxyVar = process.env['https_proxy'] || process.env['HTTPS_PROXY'];
-    }
-    else {
-        proxyVar = process.env['http_proxy'] || process.env['HTTP_PROXY'];
-    }
-    if (proxyVar) {
-        proxyUrl = url.parse(proxyVar);
-    }
-    return proxyUrl;
-}
-exports.getProxyUrl = getProxyUrl;
-function checkBypass(reqUrl) {
-    if (!reqUrl.hostname) {
-        return false;
-    }
-    let noProxy = process.env['no_proxy'] || process.env['NO_PROXY'] || '';
-    if (!noProxy) {
-        return false;
-    }
-    // Determine the request port
-    let reqPort;
-    if (reqUrl.port) {
-        reqPort = Number(reqUrl.port);
-    }
-    else if (reqUrl.protocol === 'http:') {
-        reqPort = 80;
-    }
-    else if (reqUrl.protocol === 'https:') {
-        reqPort = 443;
-    }
-    // Format the request hostname and hostname with port
-    let upperReqHosts = [reqUrl.hostname.toUpperCase()];
-    if (typeof reqPort === 'number') {
-        upperReqHosts.push(`${upperReqHosts[0]}:${reqPort}`);
-    }
-    // Compare request host against noproxy
-    for (let upperNoProxyItem of noProxy
-        .split(',')
-        .map(x => x.trim().toUpperCase())
-        .filter(x => x)) {
-        if (upperReqHosts.some(x => x === upperNoProxyItem)) {
-            return true;
-        }
-    }
-    return false;
-}
-exports.checkBypass = checkBypass;
+module.exports = deburr;
 
 
 /***/ }),
 
 /***/ 467:
-/***/ (function(module, exports, __webpack_require__) {
+/***/ ((module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 
-Object.defineProperty(exports, '__esModule', { value: true });
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var Stream = _interopDefault(__webpack_require__(413));
-var http = _interopDefault(__webpack_require__(605));
-var Url = _interopDefault(__webpack_require__(835));
-var https = _interopDefault(__webpack_require__(211));
-var zlib = _interopDefault(__webpack_require__(761));
+var Stream = _interopDefault(__nccwpck_require__(2413));
+var http = _interopDefault(__nccwpck_require__(8605));
+var Url = _interopDefault(__nccwpck_require__(8835));
+var https = _interopDefault(__nccwpck_require__(7211));
+var zlib = _interopDefault(__nccwpck_require__(8761));
 
 // Based on https://github.com/tmpvar/jsdom/blob/aa85b2abf07766ff7bf5c1f6daafb3726f2f2db5/lib/jsdom/living/blob.js
 
@@ -3570,7 +6649,7 @@ FetchError.prototype.name = 'FetchError';
 
 let convert;
 try {
-	convert = __webpack_require__(877).convert;
+	convert = __nccwpck_require__(2877).convert;
 } catch (e) {}
 
 const INTERNALS = Symbol('Body internals');
@@ -3876,6 +6955,12 @@ function convertBody(buffer, headers) {
 	// html4
 	if (!res && str) {
 		res = /<meta[\s]+?http-equiv=(['"])content-type\1[\s]+?content=(['"])(.+?)\2/i.exec(str);
+		if (!res) {
+			res = /<meta[\s]+?content=(['"])(.+?)\1[\s]+?http-equiv=(['"])content-type\3/i.exec(str);
+			if (res) {
+				res.pop(); // drop last quote
+			}
+		}
 
 		if (res) {
 			res = /charset=(.*)/i.exec(res.pop());
@@ -4883,7 +7968,7 @@ function fetch(url, opts) {
 				// HTTP fetch step 5.5
 				switch (request.redirect) {
 					case 'error':
-						reject(new FetchError(`redirect mode is set to error: ${request.url}`, 'no-redirect'));
+						reject(new FetchError(`uri requested responds with a redirect, redirect mode is set to error: ${request.url}`, 'no-redirect'));
 						finalize();
 						return;
 					case 'manual':
@@ -4922,7 +8007,8 @@ function fetch(url, opts) {
 							method: request.method,
 							body: request.body,
 							signal: request.signal,
-							timeout: request.timeout
+							timeout: request.timeout,
+							size: request.size
 						};
 
 						// HTTP-redirect fetch step 9
@@ -5045,7 +8131,7 @@ fetch.isRedirect = function (code) {
 fetch.Promise = global.Promise;
 
 module.exports = exports = fetch;
-Object.defineProperty(exports, "__esModule", { value: true });
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.default = exports;
 exports.Headers = Headers;
 exports.Request = Request;
@@ -5055,1249 +8141,652 @@ exports.FetchError = FetchError;
 
 /***/ }),
 
-/***/ 537:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ 1223:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-"use strict";
+var wrappy = __nccwpck_require__(2940)
+module.exports = wrappy(once)
+module.exports.strict = wrappy(onceStrict)
 
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var deprecation = __webpack_require__(932);
-var once = _interopDefault(__webpack_require__(223));
-
-const logOnce = once(deprecation => console.warn(deprecation));
-/**
- * Error with extra properties to help with debugging
- */
-
-class RequestError extends Error {
-  constructor(message, statusCode, options) {
-    super(message); // Maintains proper stack trace (only available on V8)
-
-    /* istanbul ignore next */
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-
-    this.name = "HttpError";
-    this.status = statusCode;
-    Object.defineProperty(this, "code", {
-      get() {
-        logOnce(new deprecation.Deprecation("[@octokit/request-error] `error.code` is deprecated, use `error.status`."));
-        return statusCode;
-      }
-
-    });
-    this.headers = options.headers || {}; // redact request credentials without mutating original request options
-
-    const requestCopy = Object.assign({}, options.request);
-
-    if (options.request.headers.authorization) {
-      requestCopy.headers = Object.assign({}, options.request.headers, {
-        authorization: options.request.headers.authorization.replace(/ .*$/, " [REDACTED]")
-      });
-    }
-
-    requestCopy.url = requestCopy.url // client_id & client_secret can be passed as URL query parameters to increase rate limit
-    // see https://developer.github.com/v3/#increasing-the-unauthenticated-rate-limit-for-oauth-applications
-    .replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]") // OAuth tokens can be passed as URL query parameters, although it is not recommended
-    // see https://developer.github.com/v3/#oauth2-token-sent-in-a-header
-    .replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
-    this.request = requestCopy;
-  }
-
-}
-
-exports.RequestError = RequestError;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 549:
-/***/ (function(module) {
-
-module.exports = addHook
-
-function addHook (state, kind, name, hook) {
-  var orig = hook
-  if (!state.registry[name]) {
-    state.registry[name] = []
-  }
-
-  if (kind === 'before') {
-    hook = function (method, options) {
-      return Promise.resolve()
-        .then(orig.bind(null, options))
-        .then(method.bind(null, options))
-    }
-  }
-
-  if (kind === 'after') {
-    hook = function (method, options) {
-      var result
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .then(function (result_) {
-          result = result_
-          return orig(result, options)
-        })
-        .then(function () {
-          return result
-        })
-    }
-  }
-
-  if (kind === 'error') {
-    hook = function (method, options) {
-      return Promise.resolve()
-        .then(method.bind(null, options))
-        .catch(function (error) {
-          return orig(error, options)
-        })
-    }
-  }
-
-  state.registry[name].push({
-    hook: hook,
-    orig: orig
+once.proto = once(function () {
+  Object.defineProperty(Function.prototype, 'once', {
+    value: function () {
+      return once(this)
+    },
+    configurable: true
   })
-}
 
-
-/***/ }),
-
-/***/ 605:
-/***/ (function(module) {
-
-module.exports = require("http");
-
-/***/ }),
-
-/***/ 614:
-/***/ (function(module) {
-
-module.exports = require("events");
-
-/***/ }),
-
-/***/ 622:
-/***/ (function(module) {
-
-module.exports = require("path");
-
-/***/ }),
-
-/***/ 631:
-/***/ (function(module) {
-
-module.exports = require("net");
-
-/***/ }),
-
-/***/ 668:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-var request = __webpack_require__(234);
-var universalUserAgent = __webpack_require__(429);
-
-const VERSION = "4.5.2";
-
-class GraphqlError extends Error {
-  constructor(request, response) {
-    const message = response.data.errors[0].message;
-    super(message);
-    Object.assign(this, response.data);
-    this.name = "GraphqlError";
-    this.request = request; // Maintains proper stack trace (only available on V8)
-
-    /* istanbul ignore next */
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-
-}
-
-const NON_VARIABLE_OPTIONS = ["method", "baseUrl", "url", "headers", "request", "query", "mediaType"];
-function graphql(request, query, options) {
-  options = typeof query === "string" ? options = Object.assign({
-    query
-  }, options) : options = query;
-  const requestOptions = Object.keys(options).reduce((result, key) => {
-    if (NON_VARIABLE_OPTIONS.includes(key)) {
-      result[key] = options[key];
-      return result;
-    }
-
-    if (!result.variables) {
-      result.variables = {};
-    }
-
-    result.variables[key] = options[key];
-    return result;
-  }, {});
-  return request(requestOptions).then(response => {
-    if (response.data.errors) {
-      throw new GraphqlError(requestOptions, {
-        data: response.data
-      });
-    }
-
-    return response.data.data;
-  });
-}
-
-function withDefaults(request$1, newDefaults) {
-  const newRequest = request$1.defaults(newDefaults);
-
-  const newApi = (query, options) => {
-    return graphql(newRequest, query, options);
-  };
-
-  return Object.assign(newApi, {
-    defaults: withDefaults.bind(null, newRequest),
-    endpoint: request.request.endpoint
-  });
-}
-
-const graphql$1 = withDefaults(request.request, {
-  headers: {
-    "user-agent": `octokit-graphql.js/${VERSION} ${universalUserAgent.getUserAgent()}`
-  },
-  method: "POST",
-  url: "/graphql"
-});
-function withCustomRequest(customRequest) {
-  return withDefaults(customRequest, {
-    method: "POST",
-    url: "/graphql"
-  });
-}
-
-exports.graphql = graphql$1;
-exports.withCustomRequest = withCustomRequest;
-//# sourceMappingURL=index.js.map
-
-
-/***/ }),
-
-/***/ 669:
-/***/ (function(module) {
-
-module.exports = require("util");
-
-/***/ }),
-
-/***/ 670:
-/***/ (function(module) {
-
-module.exports = register
-
-function register (state, name, method, options) {
-  if (typeof method !== 'function') {
-    throw new Error('method for before hook must be a function')
-  }
-
-  if (!options) {
-    options = {}
-  }
-
-  if (Array.isArray(name)) {
-    return name.reverse().reduce(function (callback, name) {
-      return register.bind(null, state, name, callback, options)
-    }, method)()
-  }
-
-  return Promise.resolve()
-    .then(function () {
-      if (!state.registry[name]) {
-        return method(options)
-      }
-
-      return (state.registry[name]).reduce(function (method, registered) {
-        return registered.hook.bind(null, method, options)
-      }, method)()
-    })
-}
-
-
-/***/ }),
-
-/***/ 682:
-/***/ (function(module, __unusedexports, __webpack_require__) {
-
-var register = __webpack_require__(670)
-var addHook = __webpack_require__(549)
-var removeHook = __webpack_require__(819)
-
-// bind with array of arguments: https://stackoverflow.com/a/21792913
-var bind = Function.bind
-var bindable = bind.bind(bind)
-
-function bindApi (hook, state, name) {
-  var removeHookRef = bindable(removeHook, null).apply(null, name ? [state, name] : [state])
-  hook.api = { remove: removeHookRef }
-  hook.remove = removeHookRef
-
-  ;['before', 'error', 'after', 'wrap'].forEach(function (kind) {
-    var args = name ? [state, kind, name] : [state, kind]
-    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args)
+  Object.defineProperty(Function.prototype, 'onceStrict', {
+    value: function () {
+      return onceStrict(this)
+    },
+    configurable: true
   })
-}
+})
 
-function HookSingular () {
-  var singularHookName = 'h'
-  var singularHookState = {
-    registry: {}
+function once (fn) {
+  var f = function () {
+    if (f.called) return f.value
+    f.called = true
+    return f.value = fn.apply(this, arguments)
   }
-  var singularHook = register.bind(null, singularHookState, singularHookName)
-  bindApi(singularHook, singularHookState, singularHookName)
-  return singularHook
+  f.called = false
+  return f
 }
 
-function HookCollection () {
-  var state = {
-    registry: {}
+function onceStrict (fn) {
+  var f = function () {
+    if (f.called)
+      throw new Error(f.onceError)
+    f.called = true
+    return f.value = fn.apply(this, arguments)
   }
-
-  var hook = register.bind(null, state)
-  bindApi(hook, state)
-
-  return hook
+  var name = fn.name || 'Function wrapped with `once`'
+  f.onceError = name + " shouldn't be called more than once"
+  f.called = false
+  return f
 }
-
-var collectionHookDeprecationMessageDisplayed = false
-function Hook () {
-  if (!collectionHookDeprecationMessageDisplayed) {
-    console.warn('[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4')
-    collectionHookDeprecationMessageDisplayed = true
-  }
-  return HookCollection()
-}
-
-Hook.Singular = HookSingular.bind()
-Hook.Collection = HookCollection.bind()
-
-module.exports = Hook
-// expose constructors as a named property for TypeScript
-module.exports.Hook = Hook
-module.exports.Singular = Hook.Singular
-module.exports.Collection = Hook.Collection
 
 
 /***/ }),
 
-/***/ 747:
-/***/ (function(module) {
+/***/ 8824:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
-module.exports = require("fs");
+"use strict";
+
+const supportsColor = __nccwpck_require__(1507);
+const hasFlag = __nccwpck_require__(7362);
+
+function parseVersion(versionString) {
+	if (/^\d{3,4}$/.test(versionString)) {
+		// Env var doesn't always use dots. example: 4601 => 46.1.0
+		const m = /(\d{1,2})(\d{2})/.exec(versionString);
+		return {
+			major: 0,
+			minor: parseInt(m[1], 10),
+			patch: parseInt(m[2], 10)
+		};
+	}
+
+	const versions = (versionString || '').split('.').map(n => parseInt(n, 10));
+	return {
+		major: versions[0],
+		minor: versions[1],
+		patch: versions[2]
+	};
+}
+
+function supportsHyperlink(stream) {
+	const {env} = process;
+
+	if ('FORCE_HYPERLINK' in env) {
+		return !(env.FORCE_HYPERLINK.length > 0 && parseInt(env.FORCE_HYPERLINK, 10) === 0);
+	}
+
+	if (hasFlag('no-hyperlink') || hasFlag('no-hyperlinks') || hasFlag('hyperlink=false') || hasFlag('hyperlink=never')) {
+		return false;
+	}
+
+	if (hasFlag('hyperlink=true') || hasFlag('hyperlink=always')) {
+		return true;
+	}
+
+	// If they specify no colors, they probably don't want hyperlinks.
+	if (!supportsColor.supportsColor(stream)) {
+		return false;
+	}
+
+	if (stream && !stream.isTTY) {
+		return false;
+	}
+
+	if (process.platform === 'win32') {
+		return false;
+	}
+
+	if ('CI' in env) {
+		return false;
+	}
+
+	if ('TEAMCITY_VERSION' in env) {
+		return false;
+	}
+
+	if ('TERM_PROGRAM' in env) {
+		const version = parseVersion(env.TERM_PROGRAM_VERSION);
+
+		switch (env.TERM_PROGRAM) {
+			case 'iTerm.app':
+				if (version.major === 3) {
+					return version.minor >= 1;
+				}
+
+				return version.major > 3;
+			// No default
+		}
+	}
+
+	if ('VTE_VERSION' in env) {
+		// 0.50.0 was supposed to support hyperlinks, but throws a segfault
+		if (env.VTE_VERSION === '0.50.0') {
+			return false;
+		}
+
+		const version = parseVersion(env.VTE_VERSION);
+		return version.major > 0 || version.minor >= 50;
+	}
+
+	return false;
+}
+
+module.exports = {
+	supportsHyperlink,
+	stdout: supportsHyperlink(process.stdout),
+	stderr: supportsHyperlink(process.stderr)
+};
+
 
 /***/ }),
 
-/***/ 761:
-/***/ (function(module) {
-
-module.exports = require("zlib");
-
-/***/ }),
-
-/***/ 762:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
+/***/ 7362:
+/***/ ((module) => {
 
 "use strict";
 
 
-Object.defineProperty(exports, '__esModule', { value: true });
+module.exports = (flag, argv = process.argv) => {
+	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
+	const position = argv.indexOf(prefix + flag);
+	const terminatorPosition = argv.indexOf('--');
+	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
+};
 
-var universalUserAgent = __webpack_require__(429);
-var beforeAfterHook = __webpack_require__(682);
-var request = __webpack_require__(234);
-var graphql = __webpack_require__(668);
-var authToken = __webpack_require__(334);
 
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
+/***/ }),
 
-  return obj;
+/***/ 1507:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const os = __nccwpck_require__(2087);
+const tty = __nccwpck_require__(3867);
+const hasFlag = __nccwpck_require__(7362);
+
+const {env} = process;
+
+let forceColor;
+if (hasFlag('no-color') ||
+	hasFlag('no-colors') ||
+	hasFlag('color=false') ||
+	hasFlag('color=never')) {
+	forceColor = 0;
+} else if (hasFlag('color') ||
+	hasFlag('colors') ||
+	hasFlag('color=true') ||
+	hasFlag('color=always')) {
+	forceColor = 1;
 }
 
-function ownKeys(object, enumerableOnly) {
-  var keys = Object.keys(object);
-
-  if (Object.getOwnPropertySymbols) {
-    var symbols = Object.getOwnPropertySymbols(object);
-    if (enumerableOnly) symbols = symbols.filter(function (sym) {
-      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-    });
-    keys.push.apply(keys, symbols);
-  }
-
-  return keys;
+if ('FORCE_COLOR' in env) {
+	if (env.FORCE_COLOR === 'true') {
+		forceColor = 1;
+	} else if (env.FORCE_COLOR === 'false') {
+		forceColor = 0;
+	} else {
+		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+	}
 }
 
-function _objectSpread2(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
+function translateLevel(level) {
+	if (level === 0) {
+		return false;
+	}
 
-    if (i % 2) {
-      ownKeys(Object(source), true).forEach(function (key) {
-        _defineProperty(target, key, source[key]);
-      });
-    } else if (Object.getOwnPropertyDescriptors) {
-      Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
-    } else {
-      ownKeys(Object(source)).forEach(function (key) {
-        Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-      });
+	return {
+		level,
+		hasBasic: true,
+		has256: level >= 2,
+		has16m: level >= 3
+	};
+}
+
+function supportsColor(haveStream, streamIsTTY) {
+	if (forceColor === 0) {
+		return 0;
+	}
+
+	if (hasFlag('color=16m') ||
+		hasFlag('color=full') ||
+		hasFlag('color=truecolor')) {
+		return 3;
+	}
+
+	if (hasFlag('color=256')) {
+		return 2;
+	}
+
+	if (haveStream && !streamIsTTY && forceColor === undefined) {
+		return 0;
+	}
+
+	const min = forceColor || 0;
+
+	if (env.TERM === 'dumb') {
+		return min;
+	}
+
+	if (process.platform === 'win32') {
+		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
+		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
+		const osRelease = os.release().split('.');
+		if (
+			Number(osRelease[0]) >= 10 &&
+			Number(osRelease[2]) >= 10586
+		) {
+			return Number(osRelease[2]) >= 14931 ? 3 : 2;
+		}
+
+		return 1;
+	}
+
+	if ('CI' in env) {
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+			return 1;
+		}
+
+		return min;
+	}
+
+	if ('TEAMCITY_VERSION' in env) {
+		return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
+	}
+
+	if (env.COLORTERM === 'truecolor') {
+		return 3;
+	}
+
+	if ('TERM_PROGRAM' in env) {
+		const version = parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
+
+		switch (env.TERM_PROGRAM) {
+			case 'iTerm.app':
+				return version >= 3 ? 3 : 2;
+			case 'Apple_Terminal':
+				return 2;
+			// No default
+		}
+	}
+
+	if (/-256(color)?$/i.test(env.TERM)) {
+		return 2;
+	}
+
+	if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
+		return 1;
+	}
+
+	if ('COLORTERM' in env) {
+		return 1;
+	}
+
+	return min;
+}
+
+function getSupportLevel(stream) {
+	const level = supportsColor(stream, stream && stream.isTTY);
+	return translateLevel(level);
+}
+
+module.exports = {
+	supportsColor: getSupportLevel,
+	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
+	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
+};
+
+
+/***/ }),
+
+/***/ 1898:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const ansiEscapes = __nccwpck_require__(8512);
+const supportsHyperlinks = __nccwpck_require__(8824);
+
+const terminalLink = (text, url, {target = 'stdout', ...options} = {}) => {
+	if (!supportsHyperlinks[target]) {
+		// If the fallback has been explicitly disabled, don't modify the text itself.
+		if (options.fallback === false) {
+			return text;
+		}
+
+		return typeof options.fallback === 'function' ? options.fallback(text, url) : `${text} (\u200B${url}\u200B)`;
+	}
+
+	return ansiEscapes.link(text, url);
+};
+
+module.exports = (text, url, options = {}) => terminalLink(text, url, options);
+
+module.exports.stderr = (text, url, options = {}) => terminalLink(text, url, {target: 'stderr', ...options});
+
+module.exports.isSupported = supportsHyperlinks.stdout;
+module.exports.stderr.isSupported = supportsHyperlinks.stderr;
+
+
+/***/ }),
+
+/***/ 4294:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+module.exports = __nccwpck_require__(4219);
+
+
+/***/ }),
+
+/***/ 4219:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+var net = __nccwpck_require__(1631);
+var tls = __nccwpck_require__(4016);
+var http = __nccwpck_require__(8605);
+var https = __nccwpck_require__(7211);
+var events = __nccwpck_require__(8614);
+var assert = __nccwpck_require__(2357);
+var util = __nccwpck_require__(1669);
+
+
+exports.httpOverHttp = httpOverHttp;
+exports.httpsOverHttp = httpsOverHttp;
+exports.httpOverHttps = httpOverHttps;
+exports.httpsOverHttps = httpsOverHttps;
+
+
+function httpOverHttp(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = http.request;
+  return agent;
+}
+
+function httpsOverHttp(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = http.request;
+  agent.createSocket = createSecureSocket;
+  agent.defaultPort = 443;
+  return agent;
+}
+
+function httpOverHttps(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = https.request;
+  return agent;
+}
+
+function httpsOverHttps(options) {
+  var agent = new TunnelingAgent(options);
+  agent.request = https.request;
+  agent.createSocket = createSecureSocket;
+  agent.defaultPort = 443;
+  return agent;
+}
+
+
+function TunnelingAgent(options) {
+  var self = this;
+  self.options = options || {};
+  self.proxyOptions = self.options.proxy || {};
+  self.maxSockets = self.options.maxSockets || http.Agent.defaultMaxSockets;
+  self.requests = [];
+  self.sockets = [];
+
+  self.on('free', function onFree(socket, host, port, localAddress) {
+    var options = toOptions(host, port, localAddress);
+    for (var i = 0, len = self.requests.length; i < len; ++i) {
+      var pending = self.requests[i];
+      if (pending.host === options.host && pending.port === options.port) {
+        // Detect the request to connect same origin server,
+        // reuse the connection.
+        self.requests.splice(i, 1);
+        pending.request.onSocket(socket);
+        return;
+      }
+    }
+    socket.destroy();
+    self.removeSocket(socket);
+  });
+}
+util.inherits(TunnelingAgent, events.EventEmitter);
+
+TunnelingAgent.prototype.addRequest = function addRequest(req, host, port, localAddress) {
+  var self = this;
+  var options = mergeOptions({request: req}, self.options, toOptions(host, port, localAddress));
+
+  if (self.sockets.length >= this.maxSockets) {
+    // We are over limit so we'll add it to the queue.
+    self.requests.push(options);
+    return;
+  }
+
+  // If we are under maxSockets create a new one.
+  self.createSocket(options, function(socket) {
+    socket.on('free', onFree);
+    socket.on('close', onCloseOrRemove);
+    socket.on('agentRemove', onCloseOrRemove);
+    req.onSocket(socket);
+
+    function onFree() {
+      self.emit('free', socket, options);
+    }
+
+    function onCloseOrRemove(err) {
+      self.removeSocket(socket);
+      socket.removeListener('free', onFree);
+      socket.removeListener('close', onCloseOrRemove);
+      socket.removeListener('agentRemove', onCloseOrRemove);
+    }
+  });
+};
+
+TunnelingAgent.prototype.createSocket = function createSocket(options, cb) {
+  var self = this;
+  var placeholder = {};
+  self.sockets.push(placeholder);
+
+  var connectOptions = mergeOptions({}, self.proxyOptions, {
+    method: 'CONNECT',
+    path: options.host + ':' + options.port,
+    agent: false,
+    headers: {
+      host: options.host + ':' + options.port
+    }
+  });
+  if (options.localAddress) {
+    connectOptions.localAddress = options.localAddress;
+  }
+  if (connectOptions.proxyAuth) {
+    connectOptions.headers = connectOptions.headers || {};
+    connectOptions.headers['Proxy-Authorization'] = 'Basic ' +
+        new Buffer(connectOptions.proxyAuth).toString('base64');
+  }
+
+  debug('making CONNECT request');
+  var connectReq = self.request(connectOptions);
+  connectReq.useChunkedEncodingByDefault = false; // for v0.6
+  connectReq.once('response', onResponse); // for v0.6
+  connectReq.once('upgrade', onUpgrade);   // for v0.6
+  connectReq.once('connect', onConnect);   // for v0.7 or later
+  connectReq.once('error', onError);
+  connectReq.end();
+
+  function onResponse(res) {
+    // Very hacky. This is necessary to avoid http-parser leaks.
+    res.upgrade = true;
+  }
+
+  function onUpgrade(res, socket, head) {
+    // Hacky.
+    process.nextTick(function() {
+      onConnect(res, socket, head);
+    });
+  }
+
+  function onConnect(res, socket, head) {
+    connectReq.removeAllListeners();
+    socket.removeAllListeners();
+
+    if (res.statusCode !== 200) {
+      debug('tunneling socket could not be established, statusCode=%d',
+        res.statusCode);
+      socket.destroy();
+      var error = new Error('tunneling socket could not be established, ' +
+        'statusCode=' + res.statusCode);
+      error.code = 'ECONNRESET';
+      options.request.emit('error', error);
+      self.removeSocket(placeholder);
+      return;
+    }
+    if (head.length > 0) {
+      debug('got illegal response body from proxy');
+      socket.destroy();
+      var error = new Error('got illegal response body from proxy');
+      error.code = 'ECONNRESET';
+      options.request.emit('error', error);
+      self.removeSocket(placeholder);
+      return;
+    }
+    debug('tunneling connection has established');
+    self.sockets[self.sockets.indexOf(placeholder)] = socket;
+    return cb(socket);
+  }
+
+  function onError(cause) {
+    connectReq.removeAllListeners();
+
+    debug('tunneling socket could not be established, cause=%s\n',
+          cause.message, cause.stack);
+    var error = new Error('tunneling socket could not be established, ' +
+                          'cause=' + cause.message);
+    error.code = 'ECONNRESET';
+    options.request.emit('error', error);
+    self.removeSocket(placeholder);
+  }
+};
+
+TunnelingAgent.prototype.removeSocket = function removeSocket(socket) {
+  var pos = this.sockets.indexOf(socket)
+  if (pos === -1) {
+    return;
+  }
+  this.sockets.splice(pos, 1);
+
+  var pending = this.requests.shift();
+  if (pending) {
+    // If we have pending requests and a socket gets closed a new one
+    // needs to be created to take over in the pool for the one that closed.
+    this.createSocket(pending, function(socket) {
+      pending.request.onSocket(socket);
+    });
+  }
+};
+
+function createSecureSocket(options, cb) {
+  var self = this;
+  TunnelingAgent.prototype.createSocket.call(self, options, function(socket) {
+    var hostHeader = options.request.getHeader('host');
+    var tlsOptions = mergeOptions({}, self.options, {
+      socket: socket,
+      servername: hostHeader ? hostHeader.replace(/:.*$/, '') : options.host
+    });
+
+    // 0 is dummy port for v0.6
+    var secureSocket = tls.connect(0, tlsOptions);
+    self.sockets[self.sockets.indexOf(socket)] = secureSocket;
+    cb(secureSocket);
+  });
+}
+
+
+function toOptions(host, port, localAddress) {
+  if (typeof host === 'string') { // since v0.10
+    return {
+      host: host,
+      port: port,
+      localAddress: localAddress
+    };
+  }
+  return host; // for v0.11 or later
+}
+
+function mergeOptions(target) {
+  for (var i = 1, len = arguments.length; i < len; ++i) {
+    var overrides = arguments[i];
+    if (typeof overrides === 'object') {
+      var keys = Object.keys(overrides);
+      for (var j = 0, keyLen = keys.length; j < keyLen; ++j) {
+        var k = keys[j];
+        if (overrides[k] !== undefined) {
+          target[k] = overrides[k];
+        }
+      }
     }
   }
-
   return target;
 }
 
-const VERSION = "3.1.1";
 
-class Octokit {
-  constructor(options = {}) {
-    const hook = new beforeAfterHook.Collection();
-    const requestDefaults = {
-      baseUrl: request.request.endpoint.DEFAULTS.baseUrl,
-      headers: {},
-      request: Object.assign({}, options.request, {
-        hook: hook.bind(null, "request")
-      }),
-      mediaType: {
-        previews: [],
-        format: ""
-      }
-    }; // prepend default user agent with `options.userAgent` if set
-
-    requestDefaults.headers["user-agent"] = [options.userAgent, `octokit-core.js/${VERSION} ${universalUserAgent.getUserAgent()}`].filter(Boolean).join(" ");
-
-    if (options.baseUrl) {
-      requestDefaults.baseUrl = options.baseUrl;
-    }
-
-    if (options.previews) {
-      requestDefaults.mediaType.previews = options.previews;
-    }
-
-    if (options.timeZone) {
-      requestDefaults.headers["time-zone"] = options.timeZone;
-    }
-
-    this.request = request.request.defaults(requestDefaults);
-    this.graphql = graphql.withCustomRequest(this.request).defaults(_objectSpread2(_objectSpread2({}, requestDefaults), {}, {
-      baseUrl: requestDefaults.baseUrl.replace(/\/api\/v3$/, "/api")
-    }));
-    this.log = Object.assign({
-      debug: () => {},
-      info: () => {},
-      warn: console.warn.bind(console),
-      error: console.error.bind(console)
-    }, options.log);
-    this.hook = hook; // (1) If neither `options.authStrategy` nor `options.auth` are set, the `octokit` instance
-    //     is unauthenticated. The `this.auth()` method is a no-op and no request hook is registred.
-    // (2) If only `options.auth` is set, use the default token authentication strategy.
-    // (3) If `options.authStrategy` is set then use it and pass in `options.auth`. Always pass own request as many strategies accept a custom request instance.
-    // TODO: type `options.auth` based on `options.authStrategy`.
-
-    if (!options.authStrategy) {
-      if (!options.auth) {
-        // (1)
-        this.auth = async () => ({
-          type: "unauthenticated"
-        });
-      } else {
-        // (2)
-        const auth = authToken.createTokenAuth(options.auth); // @ts-ignore  ¯\_(ツ)_/¯
-
-        hook.wrap("request", auth.hook);
-        this.auth = auth;
-      }
+var debug;
+if (process.env.NODE_DEBUG && /\btunnel\b/.test(process.env.NODE_DEBUG)) {
+  debug = function() {
+    var args = Array.prototype.slice.call(arguments);
+    if (typeof args[0] === 'string') {
+      args[0] = 'TUNNEL: ' + args[0];
     } else {
-      const auth = options.authStrategy(Object.assign({
-        request: this.request
-      }, options.auth)); // @ts-ignore  ¯\_(ツ)_/¯
-
-      hook.wrap("request", auth.hook);
-      this.auth = auth;
-    } // apply plugins
-    // https://stackoverflow.com/a/16345172
-
-
-    const classConstructor = this.constructor;
-    classConstructor.plugins.forEach(plugin => {
-      Object.assign(this, plugin(this, options));
-    });
+      args.unshift('TUNNEL:');
+    }
+    console.error.apply(console, args);
   }
-
-  static defaults(defaults) {
-    const OctokitWithDefaults = class extends this {
-      constructor(...args) {
-        const options = args[0] || {};
-
-        if (typeof defaults === "function") {
-          super(defaults(options));
-          return;
-        }
-
-        super(Object.assign({}, defaults, options, options.userAgent && defaults.userAgent ? {
-          userAgent: `${options.userAgent} ${defaults.userAgent}`
-        } : null));
-      }
-
-    };
-    return OctokitWithDefaults;
-  }
-  /**
-   * Attach a plugin (or many) to your Octokit instance.
-   *
-   * @example
-   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
-   */
-
-
-  static plugin(...newPlugins) {
-    var _a;
-
-    const currentPlugins = this.plugins;
-    const NewOctokit = (_a = class extends this {}, _a.plugins = currentPlugins.concat(newPlugins.filter(plugin => !currentPlugins.includes(plugin))), _a);
-    return NewOctokit;
-  }
-
+} else {
+  debug = function() {};
 }
-Octokit.VERSION = VERSION;
-Octokit.plugins = [];
+exports.debug = debug; // for test
 
-exports.Octokit = Octokit;
+
+/***/ }),
+
+/***/ 5030:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+function getUserAgent() {
+  if (typeof navigator === "object" && "userAgent" in navigator) {
+    return navigator.userAgent;
+  }
+
+  if (typeof process === "object" && "version" in process) {
+    return `Node.js/${process.version.substr(1)} (${process.platform}; ${process.arch})`;
+  }
+
+  return "<environment undetectable>";
+}
+
+exports.getUserAgent = getUserAgent;
 //# sourceMappingURL=index.js.map
 
 
 /***/ }),
 
-/***/ 819:
-/***/ (function(module) {
-
-module.exports = removeHook
-
-function removeHook (state, name, method) {
-  if (!state.registry[name]) {
-    return
-  }
-
-  var index = state.registry[name]
-    .map(function (registered) { return registered.orig })
-    .indexOf(method)
-
-  if (index === -1) {
-    return
-  }
-
-  state.registry[name].splice(index, 1)
-}
-
-
-/***/ }),
-
-/***/ 835:
-/***/ (function(module) {
-
-module.exports = require("url");
-
-/***/ }),
-
-/***/ 840:
-/***/ (function(module) {
-
-"use strict";
-
-
-/*!
- * is-plain-object <https://github.com/jonschlinkert/is-plain-object>
- *
- * Copyright (c) 2014-2017, Jon Schlinkert.
- * Released under the MIT License.
- */
-
-function isObject(o) {
-  return Object.prototype.toString.call(o) === '[object Object]';
-}
-
-function isPlainObject(o) {
-  var ctor,prot;
-
-  if (isObject(o) === false) return false;
-
-  // If has modified constructor
-  ctor = o.constructor;
-  if (ctor === undefined) return true;
-
-  // If has modified prototype
-  prot = ctor.prototype;
-  if (isObject(prot) === false) return false;
-
-  // If constructor does not have an Object-specific method
-  if (prot.hasOwnProperty('isPrototypeOf') === false) {
-    return false;
-  }
-
-  // Most likely a plain Object
-  return true;
-}
-
-module.exports = isPlainObject;
-
-
-/***/ }),
-
-/***/ 877:
-/***/ (function(module) {
-
-module.exports = eval("require")("encoding");
-
-
-/***/ }),
-
-/***/ 914:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getApiBaseUrl = exports.getProxyAgent = exports.getAuthString = void 0;
-const httpClient = __importStar(__webpack_require__(925));
-function getAuthString(token, options) {
-    if (!token && !options.auth) {
-        throw new Error('Parameter token or opts.auth is required');
-    }
-    else if (token && options.auth) {
-        throw new Error('Parameters token and opts.auth may not both be specified');
-    }
-    return typeof options.auth === 'string' ? options.auth : `token ${token}`;
-}
-exports.getAuthString = getAuthString;
-function getProxyAgent(destinationUrl) {
-    const hc = new httpClient.HttpClient();
-    return hc.getAgent(destinationUrl);
-}
-exports.getProxyAgent = getProxyAgent;
-function getApiBaseUrl() {
-    return process.env['GITHUB_API_URL'] || 'https://api.github.com';
-}
-exports.getApiBaseUrl = getApiBaseUrl;
-//# sourceMappingURL=utils.js.map
-
-/***/ }),
-
-/***/ 925:
-/***/ (function(__unusedmodule, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-const url = __webpack_require__(835);
-const http = __webpack_require__(605);
-const https = __webpack_require__(211);
-const pm = __webpack_require__(443);
-let tunnel;
-var HttpCodes;
-(function (HttpCodes) {
-    HttpCodes[HttpCodes["OK"] = 200] = "OK";
-    HttpCodes[HttpCodes["MultipleChoices"] = 300] = "MultipleChoices";
-    HttpCodes[HttpCodes["MovedPermanently"] = 301] = "MovedPermanently";
-    HttpCodes[HttpCodes["ResourceMoved"] = 302] = "ResourceMoved";
-    HttpCodes[HttpCodes["SeeOther"] = 303] = "SeeOther";
-    HttpCodes[HttpCodes["NotModified"] = 304] = "NotModified";
-    HttpCodes[HttpCodes["UseProxy"] = 305] = "UseProxy";
-    HttpCodes[HttpCodes["SwitchProxy"] = 306] = "SwitchProxy";
-    HttpCodes[HttpCodes["TemporaryRedirect"] = 307] = "TemporaryRedirect";
-    HttpCodes[HttpCodes["PermanentRedirect"] = 308] = "PermanentRedirect";
-    HttpCodes[HttpCodes["BadRequest"] = 400] = "BadRequest";
-    HttpCodes[HttpCodes["Unauthorized"] = 401] = "Unauthorized";
-    HttpCodes[HttpCodes["PaymentRequired"] = 402] = "PaymentRequired";
-    HttpCodes[HttpCodes["Forbidden"] = 403] = "Forbidden";
-    HttpCodes[HttpCodes["NotFound"] = 404] = "NotFound";
-    HttpCodes[HttpCodes["MethodNotAllowed"] = 405] = "MethodNotAllowed";
-    HttpCodes[HttpCodes["NotAcceptable"] = 406] = "NotAcceptable";
-    HttpCodes[HttpCodes["ProxyAuthenticationRequired"] = 407] = "ProxyAuthenticationRequired";
-    HttpCodes[HttpCodes["RequestTimeout"] = 408] = "RequestTimeout";
-    HttpCodes[HttpCodes["Conflict"] = 409] = "Conflict";
-    HttpCodes[HttpCodes["Gone"] = 410] = "Gone";
-    HttpCodes[HttpCodes["TooManyRequests"] = 429] = "TooManyRequests";
-    HttpCodes[HttpCodes["InternalServerError"] = 500] = "InternalServerError";
-    HttpCodes[HttpCodes["NotImplemented"] = 501] = "NotImplemented";
-    HttpCodes[HttpCodes["BadGateway"] = 502] = "BadGateway";
-    HttpCodes[HttpCodes["ServiceUnavailable"] = 503] = "ServiceUnavailable";
-    HttpCodes[HttpCodes["GatewayTimeout"] = 504] = "GatewayTimeout";
-})(HttpCodes = exports.HttpCodes || (exports.HttpCodes = {}));
-var Headers;
-(function (Headers) {
-    Headers["Accept"] = "accept";
-    Headers["ContentType"] = "content-type";
-})(Headers = exports.Headers || (exports.Headers = {}));
-var MediaTypes;
-(function (MediaTypes) {
-    MediaTypes["ApplicationJson"] = "application/json";
-})(MediaTypes = exports.MediaTypes || (exports.MediaTypes = {}));
-/**
- * Returns the proxy URL, depending upon the supplied url and proxy environment variables.
- * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
- */
-function getProxyUrl(serverUrl) {
-    let proxyUrl = pm.getProxyUrl(url.parse(serverUrl));
-    return proxyUrl ? proxyUrl.href : '';
-}
-exports.getProxyUrl = getProxyUrl;
-const HttpRedirectCodes = [
-    HttpCodes.MovedPermanently,
-    HttpCodes.ResourceMoved,
-    HttpCodes.SeeOther,
-    HttpCodes.TemporaryRedirect,
-    HttpCodes.PermanentRedirect
-];
-const HttpResponseRetryCodes = [
-    HttpCodes.BadGateway,
-    HttpCodes.ServiceUnavailable,
-    HttpCodes.GatewayTimeout
-];
-const RetryableHttpVerbs = ['OPTIONS', 'GET', 'DELETE', 'HEAD'];
-const ExponentialBackoffCeiling = 10;
-const ExponentialBackoffTimeSlice = 5;
-class HttpClientResponse {
-    constructor(message) {
-        this.message = message;
-    }
-    readBody() {
-        return new Promise(async (resolve, reject) => {
-            let output = Buffer.alloc(0);
-            this.message.on('data', (chunk) => {
-                output = Buffer.concat([output, chunk]);
-            });
-            this.message.on('end', () => {
-                resolve(output.toString());
-            });
-        });
-    }
-}
-exports.HttpClientResponse = HttpClientResponse;
-function isHttps(requestUrl) {
-    let parsedUrl = url.parse(requestUrl);
-    return parsedUrl.protocol === 'https:';
-}
-exports.isHttps = isHttps;
-class HttpClient {
-    constructor(userAgent, handlers, requestOptions) {
-        this._ignoreSslError = false;
-        this._allowRedirects = true;
-        this._allowRedirectDowngrade = false;
-        this._maxRedirects = 50;
-        this._allowRetries = false;
-        this._maxRetries = 1;
-        this._keepAlive = false;
-        this._disposed = false;
-        this.userAgent = userAgent;
-        this.handlers = handlers || [];
-        this.requestOptions = requestOptions;
-        if (requestOptions) {
-            if (requestOptions.ignoreSslError != null) {
-                this._ignoreSslError = requestOptions.ignoreSslError;
-            }
-            this._socketTimeout = requestOptions.socketTimeout;
-            if (requestOptions.allowRedirects != null) {
-                this._allowRedirects = requestOptions.allowRedirects;
-            }
-            if (requestOptions.allowRedirectDowngrade != null) {
-                this._allowRedirectDowngrade = requestOptions.allowRedirectDowngrade;
-            }
-            if (requestOptions.maxRedirects != null) {
-                this._maxRedirects = Math.max(requestOptions.maxRedirects, 0);
-            }
-            if (requestOptions.keepAlive != null) {
-                this._keepAlive = requestOptions.keepAlive;
-            }
-            if (requestOptions.allowRetries != null) {
-                this._allowRetries = requestOptions.allowRetries;
-            }
-            if (requestOptions.maxRetries != null) {
-                this._maxRetries = requestOptions.maxRetries;
-            }
-        }
-    }
-    options(requestUrl, additionalHeaders) {
-        return this.request('OPTIONS', requestUrl, null, additionalHeaders || {});
-    }
-    get(requestUrl, additionalHeaders) {
-        return this.request('GET', requestUrl, null, additionalHeaders || {});
-    }
-    del(requestUrl, additionalHeaders) {
-        return this.request('DELETE', requestUrl, null, additionalHeaders || {});
-    }
-    post(requestUrl, data, additionalHeaders) {
-        return this.request('POST', requestUrl, data, additionalHeaders || {});
-    }
-    patch(requestUrl, data, additionalHeaders) {
-        return this.request('PATCH', requestUrl, data, additionalHeaders || {});
-    }
-    put(requestUrl, data, additionalHeaders) {
-        return this.request('PUT', requestUrl, data, additionalHeaders || {});
-    }
-    head(requestUrl, additionalHeaders) {
-        return this.request('HEAD', requestUrl, null, additionalHeaders || {});
-    }
-    sendStream(verb, requestUrl, stream, additionalHeaders) {
-        return this.request(verb, requestUrl, stream, additionalHeaders);
-    }
-    /**
-     * Gets a typed object from an endpoint
-     * Be aware that not found returns a null.  Other errors (4xx, 5xx) reject the promise
-     */
-    async getJson(requestUrl, additionalHeaders = {}) {
-        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
-        let res = await this.get(requestUrl, additionalHeaders);
-        return this._processResponse(res, this.requestOptions);
-    }
-    async postJson(requestUrl, obj, additionalHeaders = {}) {
-        let data = JSON.stringify(obj, null, 2);
-        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
-        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
-        let res = await this.post(requestUrl, data, additionalHeaders);
-        return this._processResponse(res, this.requestOptions);
-    }
-    async putJson(requestUrl, obj, additionalHeaders = {}) {
-        let data = JSON.stringify(obj, null, 2);
-        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
-        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
-        let res = await this.put(requestUrl, data, additionalHeaders);
-        return this._processResponse(res, this.requestOptions);
-    }
-    async patchJson(requestUrl, obj, additionalHeaders = {}) {
-        let data = JSON.stringify(obj, null, 2);
-        additionalHeaders[Headers.Accept] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.Accept, MediaTypes.ApplicationJson);
-        additionalHeaders[Headers.ContentType] = this._getExistingOrDefaultHeader(additionalHeaders, Headers.ContentType, MediaTypes.ApplicationJson);
-        let res = await this.patch(requestUrl, data, additionalHeaders);
-        return this._processResponse(res, this.requestOptions);
-    }
-    /**
-     * Makes a raw http request.
-     * All other methods such as get, post, patch, and request ultimately call this.
-     * Prefer get, del, post and patch
-     */
-    async request(verb, requestUrl, data, headers) {
-        if (this._disposed) {
-            throw new Error('Client has already been disposed.');
-        }
-        let parsedUrl = url.parse(requestUrl);
-        let info = this._prepareRequest(verb, parsedUrl, headers);
-        // Only perform retries on reads since writes may not be idempotent.
-        let maxTries = this._allowRetries && RetryableHttpVerbs.indexOf(verb) != -1
-            ? this._maxRetries + 1
-            : 1;
-        let numTries = 0;
-        let response;
-        while (numTries < maxTries) {
-            response = await this.requestRaw(info, data);
-            // Check if it's an authentication challenge
-            if (response &&
-                response.message &&
-                response.message.statusCode === HttpCodes.Unauthorized) {
-                let authenticationHandler;
-                for (let i = 0; i < this.handlers.length; i++) {
-                    if (this.handlers[i].canHandleAuthentication(response)) {
-                        authenticationHandler = this.handlers[i];
-                        break;
-                    }
-                }
-                if (authenticationHandler) {
-                    return authenticationHandler.handleAuthentication(this, info, data);
-                }
-                else {
-                    // We have received an unauthorized response but have no handlers to handle it.
-                    // Let the response return to the caller.
-                    return response;
-                }
-            }
-            let redirectsRemaining = this._maxRedirects;
-            while (HttpRedirectCodes.indexOf(response.message.statusCode) != -1 &&
-                this._allowRedirects &&
-                redirectsRemaining > 0) {
-                const redirectUrl = response.message.headers['location'];
-                if (!redirectUrl) {
-                    // if there's no location to redirect to, we won't
-                    break;
-                }
-                let parsedRedirectUrl = url.parse(redirectUrl);
-                if (parsedUrl.protocol == 'https:' &&
-                    parsedUrl.protocol != parsedRedirectUrl.protocol &&
-                    !this._allowRedirectDowngrade) {
-                    throw new Error('Redirect from HTTPS to HTTP protocol. This downgrade is not allowed for security reasons. If you want to allow this behavior, set the allowRedirectDowngrade option to true.');
-                }
-                // we need to finish reading the response before reassigning response
-                // which will leak the open socket.
-                await response.readBody();
-                // strip authorization header if redirected to a different hostname
-                if (parsedRedirectUrl.hostname !== parsedUrl.hostname) {
-                    for (let header in headers) {
-                        // header names are case insensitive
-                        if (header.toLowerCase() === 'authorization') {
-                            delete headers[header];
-                        }
-                    }
-                }
-                // let's make the request with the new redirectUrl
-                info = this._prepareRequest(verb, parsedRedirectUrl, headers);
-                response = await this.requestRaw(info, data);
-                redirectsRemaining--;
-            }
-            if (HttpResponseRetryCodes.indexOf(response.message.statusCode) == -1) {
-                // If not a retry code, return immediately instead of retrying
-                return response;
-            }
-            numTries += 1;
-            if (numTries < maxTries) {
-                await response.readBody();
-                await this._performExponentialBackoff(numTries);
-            }
-        }
-        return response;
-    }
-    /**
-     * Needs to be called if keepAlive is set to true in request options.
-     */
-    dispose() {
-        if (this._agent) {
-            this._agent.destroy();
-        }
-        this._disposed = true;
-    }
-    /**
-     * Raw request.
-     * @param info
-     * @param data
-     */
-    requestRaw(info, data) {
-        return new Promise((resolve, reject) => {
-            let callbackForResult = function (err, res) {
-                if (err) {
-                    reject(err);
-                }
-                resolve(res);
-            };
-            this.requestRawWithCallback(info, data, callbackForResult);
-        });
-    }
-    /**
-     * Raw request with callback.
-     * @param info
-     * @param data
-     * @param onResult
-     */
-    requestRawWithCallback(info, data, onResult) {
-        let socket;
-        if (typeof data === 'string') {
-            info.options.headers['Content-Length'] = Buffer.byteLength(data, 'utf8');
-        }
-        let callbackCalled = false;
-        let handleResult = (err, res) => {
-            if (!callbackCalled) {
-                callbackCalled = true;
-                onResult(err, res);
-            }
-        };
-        let req = info.httpModule.request(info.options, (msg) => {
-            let res = new HttpClientResponse(msg);
-            handleResult(null, res);
-        });
-        req.on('socket', sock => {
-            socket = sock;
-        });
-        // If we ever get disconnected, we want the socket to timeout eventually
-        req.setTimeout(this._socketTimeout || 3 * 60000, () => {
-            if (socket) {
-                socket.end();
-            }
-            handleResult(new Error('Request timeout: ' + info.options.path), null);
-        });
-        req.on('error', function (err) {
-            // err has statusCode property
-            // res should have headers
-            handleResult(err, null);
-        });
-        if (data && typeof data === 'string') {
-            req.write(data, 'utf8');
-        }
-        if (data && typeof data !== 'string') {
-            data.on('close', function () {
-                req.end();
-            });
-            data.pipe(req);
-        }
-        else {
-            req.end();
-        }
-    }
-    /**
-     * Gets an http agent. This function is useful when you need an http agent that handles
-     * routing through a proxy server - depending upon the url and proxy environment variables.
-     * @param serverUrl  The server URL where the request will be sent. For example, https://api.github.com
-     */
-    getAgent(serverUrl) {
-        let parsedUrl = url.parse(serverUrl);
-        return this._getAgent(parsedUrl);
-    }
-    _prepareRequest(method, requestUrl, headers) {
-        const info = {};
-        info.parsedUrl = requestUrl;
-        const usingSsl = info.parsedUrl.protocol === 'https:';
-        info.httpModule = usingSsl ? https : http;
-        const defaultPort = usingSsl ? 443 : 80;
-        info.options = {};
-        info.options.host = info.parsedUrl.hostname;
-        info.options.port = info.parsedUrl.port
-            ? parseInt(info.parsedUrl.port)
-            : defaultPort;
-        info.options.path =
-            (info.parsedUrl.pathname || '') + (info.parsedUrl.search || '');
-        info.options.method = method;
-        info.options.headers = this._mergeHeaders(headers);
-        if (this.userAgent != null) {
-            info.options.headers['user-agent'] = this.userAgent;
-        }
-        info.options.agent = this._getAgent(info.parsedUrl);
-        // gives handlers an opportunity to participate
-        if (this.handlers) {
-            this.handlers.forEach(handler => {
-                handler.prepareRequest(info.options);
-            });
-        }
-        return info;
-    }
-    _mergeHeaders(headers) {
-        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
-        if (this.requestOptions && this.requestOptions.headers) {
-            return Object.assign({}, lowercaseKeys(this.requestOptions.headers), lowercaseKeys(headers));
-        }
-        return lowercaseKeys(headers || {});
-    }
-    _getExistingOrDefaultHeader(additionalHeaders, header, _default) {
-        const lowercaseKeys = obj => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCase()] = obj[k]), c), {});
-        let clientHeader;
-        if (this.requestOptions && this.requestOptions.headers) {
-            clientHeader = lowercaseKeys(this.requestOptions.headers)[header];
-        }
-        return additionalHeaders[header] || clientHeader || _default;
-    }
-    _getAgent(parsedUrl) {
-        let agent;
-        let proxyUrl = pm.getProxyUrl(parsedUrl);
-        let useProxy = proxyUrl && proxyUrl.hostname;
-        if (this._keepAlive && useProxy) {
-            agent = this._proxyAgent;
-        }
-        if (this._keepAlive && !useProxy) {
-            agent = this._agent;
-        }
-        // if agent is already assigned use that agent.
-        if (!!agent) {
-            return agent;
-        }
-        const usingSsl = parsedUrl.protocol === 'https:';
-        let maxSockets = 100;
-        if (!!this.requestOptions) {
-            maxSockets = this.requestOptions.maxSockets || http.globalAgent.maxSockets;
-        }
-        if (useProxy) {
-            // If using proxy, need tunnel
-            if (!tunnel) {
-                tunnel = __webpack_require__(294);
-            }
-            const agentOptions = {
-                maxSockets: maxSockets,
-                keepAlive: this._keepAlive,
-                proxy: {
-                    proxyAuth: proxyUrl.auth,
-                    host: proxyUrl.hostname,
-                    port: proxyUrl.port
-                }
-            };
-            let tunnelAgent;
-            const overHttps = proxyUrl.protocol === 'https:';
-            if (usingSsl) {
-                tunnelAgent = overHttps ? tunnel.httpsOverHttps : tunnel.httpsOverHttp;
-            }
-            else {
-                tunnelAgent = overHttps ? tunnel.httpOverHttps : tunnel.httpOverHttp;
-            }
-            agent = tunnelAgent(agentOptions);
-            this._proxyAgent = agent;
-        }
-        // if reusing agent across request and tunneling agent isn't assigned create a new agent
-        if (this._keepAlive && !agent) {
-            const options = { keepAlive: this._keepAlive, maxSockets: maxSockets };
-            agent = usingSsl ? new https.Agent(options) : new http.Agent(options);
-            this._agent = agent;
-        }
-        // if not using private agent and tunnel agent isn't setup then use global agent
-        if (!agent) {
-            agent = usingSsl ? https.globalAgent : http.globalAgent;
-        }
-        if (usingSsl && this._ignoreSslError) {
-            // we don't want to set NODE_TLS_REJECT_UNAUTHORIZED=0 since that will affect request for entire process
-            // http.RequestOptions doesn't expose a way to modify RequestOptions.agent.options
-            // we have to cast it to any and change it directly
-            agent.options = Object.assign(agent.options || {}, {
-                rejectUnauthorized: false
-            });
-        }
-        return agent;
-    }
-    _performExponentialBackoff(retryNumber) {
-        retryNumber = Math.min(ExponentialBackoffCeiling, retryNumber);
-        const ms = ExponentialBackoffTimeSlice * Math.pow(2, retryNumber);
-        return new Promise(resolve => setTimeout(() => resolve(), ms));
-    }
-    static dateTimeDeserializer(key, value) {
-        if (typeof value === 'string') {
-            let a = new Date(value);
-            if (!isNaN(a.valueOf())) {
-                return a;
-            }
-        }
-        return value;
-    }
-    async _processResponse(res, options) {
-        return new Promise(async (resolve, reject) => {
-            const statusCode = res.message.statusCode;
-            const response = {
-                statusCode: statusCode,
-                result: null,
-                headers: {}
-            };
-            // not found leads to null obj returned
-            if (statusCode == HttpCodes.NotFound) {
-                resolve(response);
-            }
-            let obj;
-            let contents;
-            // get the result from the body
-            try {
-                contents = await res.readBody();
-                if (contents && contents.length > 0) {
-                    if (options && options.deserializeDates) {
-                        obj = JSON.parse(contents, HttpClient.dateTimeDeserializer);
-                    }
-                    else {
-                        obj = JSON.parse(contents);
-                    }
-                    response.result = obj;
-                }
-                response.headers = res.message.headers;
-            }
-            catch (err) {
-                // Invalid resource (contents not json);  leaving result obj null
-            }
-            // note that 3xx redirects are handled by the http layer.
-            if (statusCode > 299) {
-                let msg;
-                // if exception/error in body, attempt to get better error
-                if (obj && obj.message) {
-                    msg = obj.message;
-                }
-                else if (contents && contents.length > 0) {
-                    // it may be the case that the exception is in the body message as string
-                    msg = contents;
-                }
-                else {
-                    msg = 'Failed request: (' + statusCode + ')';
-                }
-                let err = new Error(msg);
-                // attach statusCode and body obj (if available) to the error object
-                err['statusCode'] = statusCode;
-                if (response.result) {
-                    err['result'] = response.result;
-                }
-                reject(err);
-            }
-            else {
-                resolve(response);
-            }
-        });
-    }
-}
-exports.HttpClient = HttpClient;
-
-
-/***/ }),
-
-/***/ 932:
-/***/ (function(__unusedmodule, exports) {
-
-"use strict";
-
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
-class Deprecation extends Error {
-  constructor(message) {
-    super(message); // Maintains proper stack trace (only available on V8)
-
-    /* istanbul ignore next */
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-
-    this.name = 'Deprecation';
-  }
-
-}
-
-exports.Deprecation = Deprecation;
-
-
-/***/ }),
-
-/***/ 940:
-/***/ (function(module) {
+/***/ 2940:
+/***/ ((module) => {
 
 // Returns a wrapper function that returns a wrapped callback
 // The wrapper function should do some stuff, and return a
@@ -6334,6 +8823,178 @@ function wrappy (fn, cb) {
 }
 
 
+/***/ }),
+
+/***/ 2877:
+/***/ ((module) => {
+
+module.exports = eval("require")("encoding");
+
+
+/***/ }),
+
+/***/ 2357:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("assert");;
+
+/***/ }),
+
+/***/ 8614:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("events");;
+
+/***/ }),
+
+/***/ 5747:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs");;
+
+/***/ }),
+
+/***/ 8605:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("http");;
+
+/***/ }),
+
+/***/ 7211:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("https");;
+
+/***/ }),
+
+/***/ 1631:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("net");;
+
+/***/ }),
+
+/***/ 2087:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("os");;
+
+/***/ }),
+
+/***/ 5622:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("path");;
+
+/***/ }),
+
+/***/ 2413:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("stream");;
+
+/***/ }),
+
+/***/ 4016:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("tls");;
+
+/***/ }),
+
+/***/ 3867:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("tty");;
+
+/***/ }),
+
+/***/ 8835:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("url");;
+
+/***/ }),
+
+/***/ 1669:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("util");;
+
+/***/ }),
+
+/***/ 8761:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("zlib");;
+
 /***/ })
 
-/******/ });
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __nccwpck_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		if(__webpack_module_cache__[moduleId]) {
+/******/ 			return __webpack_module_cache__[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			id: moduleId,
+/******/ 			loaded: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		var threw = true;
+/******/ 		try {
+/******/ 			__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
+/******/ 			threw = false;
+/******/ 		} finally {
+/******/ 			if(threw) delete __webpack_module_cache__[moduleId];
+/******/ 		}
+/******/ 	
+/******/ 		// Flag the module as loaded
+/******/ 		module.loaded = true;
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/node module decorator */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.nmd = (module) => {
+/******/ 			module.paths = [];
+/******/ 			if (!module.children) module.children = [];
+/******/ 			return module;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/compat */
+/******/ 	
+/******/ 	__nccwpck_require__.ab = __dirname + "/";/************************************************************************/
+/******/ 	// module exports must be returned from runtime so entry inlining is disabled
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	return __nccwpck_require__(3109);
+/******/ })()
+;

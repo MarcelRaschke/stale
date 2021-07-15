@@ -5,13 +5,21 @@
   "description": "Marks old issues and PRs as stale",
   "main": "lib/main.js",
   "scripts": {
-    "build": "tsc",
-    "format": "prettier --write **/*.ts",
-    "format-check": "prettier --check **/*.ts",
+    "build": "tsc --project tsconfig.app.json",
+    "format": "prettier --write --ignore-unknown **/*.{md,json,yml,ts}",
+    "format-check": "prettier --check --ignore-unknown **/*.{md,json,yml,ts}",
     "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "lint:all": "npm run format-check && npm run lint",
+    "lint:all:fix": "npm run format && npm run lint:fix",
     "pack": "ncc build",
     "test": "jest",
-    "all": "npm run build && npm run format && npm run lint && npm run pack && npm test"
+    "test:only-errors": "jest --reporters jest-silent-reporter --silent",
+    "test:watch": "jest --watch --notify --expand",
+    "all": "npm run build && npm run format && npm run lint && npm run pack && npm test",
+    "prerelease": "npm run build && npm run pack",
+    "release": "standard-version",
+    "release:dry-run": "standard-version --dry-run"
   },
   "repository": {
     "type": "git",
@@ -22,28 +30,38 @@
     "node",
     "stale"
   ],
+  "engines": {
+    "node": "12",
+    "npm": "6"
+  },
   "author": "GitHub",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
-    "@octokit/rest": "^18.0.4",
-    "semver": "^7.3.2"
+    "lodash.deburr": "^4.1.0",
+    "semver": "^7.3.5"
   },
   "devDependencies": {
-    "@types/semver": "^7.3.1",
-    "@types/jest": "^26.0.10",
-    "@types/node": "^14.10.0",
-    "@typescript-eslint/parser": "^3.10.1",
-    "@vercel/ncc": "^0.24.0",
-    "eslint": "^7.7.0",
-    "eslint-plugin-github": "^4.0.1",
-    "eslint-plugin-jest": "^23.20.0",
-    "jest": "^24.9.0",
-    "jest-circus": "^26.4.2",
-    "js-yaml": "^3.14.0",
-    "prettier": "^2.1.1",
-    "ts-jest": "^24.2.0",
-    "typescript": "^4.0.2"
+    "@types/jest": "^26.0.23",
+    "@types/lodash.deburr": "^4.1.6",
+    "@types/node": "^15.0.2",
+    "@types/semver": "^7.3.5",
+    "@typescript-eslint/eslint-plugin": "^4.26.0",
+    "@typescript-eslint/parser": "^4.26.1",
+    "@vercel/ncc": "^0.28.6",
+    "ansi-styles": "5.2.0",
+    "eslint": "^7.28.0",
+    "eslint-plugin-github": "^4.1.2",
+    "eslint-plugin-jest": "^24.3.6",
+    "jest": "^26.6.3",
+    "jest-circus": "^26.6.3",
+    "jest-silent-reporter": "^0.4.0",
+    "js-yaml": "^4.1.0",
+    "prettier": "^2.3.1",
+    "standard-version": "^9.2.0",
+    "terminal-link": "^2.1.1",
+    "ts-jest": "^26.5.6",
+    "typescript": "^4.3.2"
   }
 }
