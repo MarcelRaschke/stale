@@ -11,7 +11,9 @@
     "lint": "eslint src/**/*.ts",
     "pack": "ncc build",
     "test": "jest",
-    "all": "npm run build && npm run format && npm run lint && npm run pack && npm test"
+    "all": "npm run build && npm run format && npm run lint && npm run pack && npm test",
+    "prepublish": "npm run snyk-protect",
+    "snyk-protect": "snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -28,7 +30,8 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "@octokit/rest": "^18.0.4",
-    "semver": "^7.3.2"
+    "semver": "^7.3.2",
+    "@snyk/protect": "latest"
   },
   "devDependencies": {
     "@types/semver": "^7.3.1",
@@ -45,5 +48,6 @@
     "prettier": "^2.1.1",
     "ts-jest": "^24.2.0",
     "typescript": "^4.0.2"
-  }
+  },
+  "snyk": true
 }
